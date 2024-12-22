@@ -15,7 +15,6 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
-import { useInView } from "react-intersection-observer";
 import quizStore from "../stores/quizStore";
 import userStore from "../stores/userStore";
 import '../../src/styles/Animate.css';
