@@ -14,7 +14,7 @@ An **interactive quiz application** built with **React**, **Material-UI (MUI)**,
 
 - **Frontend**: [React](https://reactjs.org/) with [Material-UI (MUI)](https://mui.com/)
 - **State Management**: [MobX](https://mobx.js.org/)
-- **Backend**: [Firebase](https://firebase.google.com/) (if applicable)
+- **Backend**: [Firebase](https://firebase.google.com/)
 - **Version Control**: [GitHub](https://github.com/kaniobed28/quiz-app)
 
 ## Installation
