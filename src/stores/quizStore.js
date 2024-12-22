@@ -1,6 +1,7 @@
 import { makeAutoObservable } from "mobx";
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import userStore from "./userStore"; // Import the userStore to fetch user data
 
 class QuizStore {
   quizzes = [];
@@ -11,7 +12,7 @@ class QuizStore {
 
   constructor() {
     makeAutoObservable(this);
-    this.fetchQuizzes(); // Fetch quizzes on initialization
+    this.fetchQuizzes();
   }
 
   async fetchQuizzes() {
@@ -29,9 +30,9 @@ class QuizStore {
   async createQuiz(name, description = "", admin = {}, authCode = null) {
     const newQuiz = {
       name,
-      description, // Include description
-      admin, // Include admin details
-      authCode: authCode || null, // Add authCode (optional)
+      description,
+      admin,
+      authCode: authCode || null,
       questions: [],
     };
 
@@ -122,7 +123,28 @@ class QuizStore {
     this.quizCompleted = false;
   }
 
-  answerQuestion(isCorrect) {
+  async saveResult(resultData) {
+    try {
+      await addDoc(collection(db, "quizResults"), resultData);
+      console.log("Result saved successfully:", resultData);
+    } catch (error) {
+      console.error("Error saving result:", error.message);
+    }
+  }
+
+  async fetchScores(quizId) {
+    try {
+      const scoresSnapshot = await getDocs(collection(db, "quizResults"));
+      return scoresSnapshot.docs
+        .map((doc) => doc.data())
+        .filter((result) => result.quizId === quizId);
+    } catch (error) {
+      console.error("Error fetching scores:", error.message);
+      return [];
+    }
+  }
+
+  async answerQuestion(isCorrect) {
     if (isCorrect) {
       this.score += 1;
     }
@@ -130,6 +152,20 @@ class QuizStore {
       this.currentQuestionIndex += 1;
     } else {
       this.quizCompleted = true;
+
+      const resultData = {
+        quizId: this.currentQuiz.id,
+        quizName: this.currentQuiz.name,
+        user: {
+          email: userStore.user?.email || "Unknown", // Fetch current user's email from userStore
+          name: userStore.user?.displayName || "Anonymous", // Add user's name
+        },
+        score: this.score,
+        totalQuestions: this.currentQuiz.questions.length,
+        completedAt: new Date().toISOString(),
+      };
+
+      await this.saveResult(resultData);
     }
   }
 }

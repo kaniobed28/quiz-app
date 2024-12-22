@@ -10,9 +10,11 @@ import {
 } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next"; // Import translation hook
 import userStore from "../stores/userStore";
 
 const AuthPage = observer(() => {
+  const { t } = useTranslation(); // Initialize translation
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -38,7 +40,7 @@ const AuthPage = observer(() => {
       <Paper elevation={4} style={{ padding: "30px", borderRadius: "15px" }}>
         <Box textAlign="center">
           <Avatar
-            alt="Quiz App Logo"
+            alt={t("app_logo_alt")}
             src="/quiz-logo.png" // Replace with your logo's path
             style={{
               width: "80px",
@@ -48,10 +50,10 @@ const AuthPage = observer(() => {
             }}
           />
           <Typography variant="h4" gutterBottom>
-            Welcome to the Quiz App
+            {t("welcome_quiz_app")}
           </Typography>
           <Typography variant="subtitle1" gutterBottom color="textSecondary">
-            Explore and challenge your knowledge with curated quizzes!
+            {t("explore_quizzes")}
           </Typography>
 
           {userStore.isLoggedIn() ? (
@@ -59,7 +61,7 @@ const AuthPage = observer(() => {
           ) : (
             <>
               <Typography variant="body1" gutterBottom>
-                Please log in to access the app.
+                {t("please_log_in")}
               </Typography>
               <Button
                 variant="contained"
@@ -72,7 +74,7 @@ const AuthPage = observer(() => {
                   padding: "10px 20px",
                 }}
               >
-                Login with Google
+                {t("login_google")}
               </Button>
             </>
           )}

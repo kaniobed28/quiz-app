@@ -5,7 +5,7 @@
   }
   
   .fade-out {
-    opacity: 0.8;
+    opacity: 1;
     transform: translateY(20px);
   }
   

@@ -14,26 +14,35 @@ import {
   DialogContent,
   TextField,
   DialogActions,
+  Avatar,
 } from "@mui/material";
+import QuizIcon from "@mui/icons-material/Quiz";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import quizStore from "../stores/quizStore";
+import userStore from "../stores/userStore";
 
 const QuizPage = observer(() => {
+  const { t } = useTranslation();
   const [authCode, setAuthCode] = useState("");
-  const [authDialogOpen, setAuthDialogOpen] = useState(false); // Only open if authCode exists
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [authError, setAuthError] = useState(false);
+  const [sendingResult, setSendingResult] = useState(false);
 
   const currentQuestion = quizStore.currentQuiz?.questions[quizStore.currentQuestionIndex];
 
   useEffect(() => {
-    // Open the dialog only if the quiz has an authCode
     if (quizStore.currentQuiz?.authCode) {
       setAuthDialogOpen(true);
     }
   }, []);
 
-  const handleAnswer = (isCorrect) => {
+  const handleAnswer = async (isCorrect) => {
     quizStore.answerQuestion(isCorrect);
+
+    if (quizStore.quizCompleted) {
+      await sendResultsToAdmin();
+    }
   };
 
   const validateAuthCode = () => {
@@ -42,6 +51,33 @@ const QuizPage = observer(() => {
       setAuthError(false);
     } else {
       setAuthError(true);
+    }
+  };
+
+  const sendResultsToAdmin = async () => {
+    setSendingResult(true);
+    const resultData = {
+      user: {
+        name: userStore.user?.displayName || "Anonymous",
+        email: userStore.user?.email || "Unknown",
+      },
+      quiz: {
+        id: quizStore.currentQuiz.id,
+        name: quizStore.currentQuiz.name,
+      },
+      score: quizStore.score,
+      totalQuestions: quizStore.currentQuiz.questions.length,
+      timestamp: new Date().toISOString(),
+    };
+
+    try {
+      await quizStore.saveResult(resultData);
+
+      console.log("Results sent to admin:", resultData);
+    } catch (error) {
+      console.error("Error sending results:", error);
+    } finally {
+      setSendingResult(false);
     }
   };
 
@@ -59,11 +95,15 @@ const QuizPage = observer(() => {
       >
         <Fade in={true} timeout={500}>
           <Card elevation={3} style={{ padding: "30px", borderRadius: "15px", maxWidth: "500px" }}>
+            <QuizIcon style={{ fontSize: "60px", color: "#3f51b5", marginBottom: "20px" }} />
             <Typography variant="h4" gutterBottom>
-              Quiz Completed!
+              {t("quiz_completed")}
             </Typography>
             <Typography variant="h6" color="textSecondary">
-              Your score is {quizStore.score}/{quizStore.currentQuiz?.questions.length}
+              {t("your_score", {
+                score: quizStore.score,
+                total: quizStore.currentQuiz?.questions.length,
+              })}
             </Typography>
             <Button
               variant="contained"
@@ -71,8 +111,9 @@ const QuizPage = observer(() => {
               size="large"
               style={{ marginTop: "20px" }}
               onClick={() => window.location.reload()}
+              disabled={sendingResult}
             >
-              Retake Quiz
+              {sendingResult ? t("sending_results") : t("retake_quiz")}
             </Button>
           </Card>
         </Fade>
@@ -87,20 +128,20 @@ const QuizPage = observer(() => {
       {/* Auth Code Dialog */}
       {quizStore.currentQuiz?.authCode && (
         <Dialog open={authDialogOpen} disableEscapeKeyDown>
-          <DialogTitle>Enter Authentication Code</DialogTitle>
+          <DialogTitle>{t("enter_auth_code")}</DialogTitle>
           <DialogContent>
             <TextField
-              label="Authentication Code"
+              label={t("auth_code")}
               fullWidth
               value={authCode}
               onChange={(e) => setAuthCode(e.target.value)}
               error={authError}
-              helperText={authError && "Invalid authentication code. Please try again."}
+              helperText={authError && t("invalid_auth_code")}
             />
           </DialogContent>
           <DialogActions>
             <Button onClick={validateAuthCode} variant="contained" color="primary">
-              Submit
+              {t("submit")}
             </Button>
           </DialogActions>
         </Dialog>
@@ -136,7 +177,10 @@ const QuizPage = observer(() => {
               align="center"
               style={{ marginBottom: "10px", fontWeight: "bold" }}
             >
-              Question {quizStore.currentQuestionIndex + 1} of {quizStore.currentQuiz?.questions.length}
+              {t("question_progress", {
+                current: quizStore.currentQuestionIndex + 1,
+                total: quizStore.currentQuiz?.questions.length,
+              })}
             </Typography>
 
             {/* Question Card */}

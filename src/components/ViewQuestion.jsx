@@ -11,13 +11,17 @@ import {
   TextField,
   Box,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
+import AddIcon from "@mui/icons-material/Add";
 import quizStore from "../stores/quizStore";
+import { useTranslation } from "react-i18next";
 
 const ViewQuestions = ({ quiz, onClose }) => {
+  const { t } = useTranslation();
   const [newQuestion, setNewQuestion] = useState("");
   const [newOptionText, setNewOptionText] = useState("");
   const [options, setOptions] = useState([]);
@@ -37,20 +41,18 @@ const ViewQuestions = ({ quiz, onClose }) => {
     if (newQuestion.trim() && options.length > 0) {
       try {
         if (editingQuestion !== null) {
-          // Update existing question
           await quizStore.updateQuestion(quiz.id, editingQuestion, {
             question: newQuestion,
             options,
           });
         } else {
-          // Add new question
           await quizStore.addQuestion(quiz.id, { question: newQuestion, options });
         }
         setNewQuestion("");
         setOptions([]);
         setEditingQuestion(null);
       } catch (error) {
-        console.error("Error saving question:", error.message);
+        console.error(t("error_saving_question"), error.message);
       }
     }
   };
@@ -59,7 +61,7 @@ const ViewQuestions = ({ quiz, onClose }) => {
     try {
       await quizStore.deleteQuestion(quiz.id, index);
     } catch (error) {
-      console.error("Error deleting question:", error.message);
+      console.error(t("error_deleting_question"), error.message);
     }
   };
 
@@ -92,43 +94,49 @@ const ViewQuestions = ({ quiz, onClose }) => {
 
   return (
     <Dialog open={true} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>{quiz.name} - Questions</DialogTitle>
+      <DialogTitle>{`${quiz.name} - ${t("questions")}`}</DialogTitle>
       <DialogContent>
         <List>
           {quiz.questions && quiz.questions.length > 0 ? (
             quiz.questions.map((question, index) => (
-              <Box key={index} marginBottom="20px">
+              <Box key={index} mb={3}>
                 <ListItem
-                  style={{
+                  sx={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    borderBottom: "1px solid #ddd",
+                    pb: 1,
                   }}
                 >
                   <Typography variant="body1">
                     {index + 1}. {question.question}
                   </Typography>
                   <Box>
-                    <IconButton onClick={() => handleEditQuestion(index)}>
-                      <EditIcon color="primary" />
-                    </IconButton>
-                    <IconButton onClick={() => handleDeleteQuestion(index)}>
-                      <DeleteIcon color="secondary" />
-                    </IconButton>
+                    <Tooltip title={t("edit")}>
+                      <IconButton onClick={() => handleEditQuestion(index)}>
+                        <EditIcon color="primary" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={t("delete")}>
+                      <IconButton onClick={() => handleDeleteQuestion(index)}>
+                        <DeleteIcon color="error" />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </ListItem>
-                <List style={{ marginLeft: "20px" }}>
+                <List sx={{ ml: 3 }}>
                   {question.options.map((opt, i) => (
                     <ListItem
                       key={i}
-                      style={{
+                      sx={{
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
                       }}
                     >
                       <Typography>
-                        {opt.text} {opt.isCorrect && "(Correct)"}
+                        {opt.text} {opt.isCorrect && `(${t("correct")})`}
                       </Typography>
                     </ListItem>
                   ))}
@@ -136,27 +144,25 @@ const ViewQuestions = ({ quiz, onClose }) => {
               </Box>
             ))
           ) : (
-            <Typography>No questions available for this quiz.</Typography>
+            <Typography>{t("no_questions_available")}</Typography>
           )}
         </List>
 
-        {/* Add or Edit Question */}
-        <Box marginTop="20px">
+        <Box mt={3}>
           <Typography variant="h6" gutterBottom>
-            {editingQuestion !== null ? "Edit Question" : "Add a New Question"}
+            {editingQuestion !== null ? t("edit_question") : t("add_question")}
           </Typography>
           <TextField
-            label="Question"
+            label={t("question")}
             fullWidth
             margin="normal"
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
           />
-          <Box marginBottom="10px">
+          <Box display="flex" gap={2} mb={2}>
             <TextField
-              label="Option"
+              label={t("option")}
               fullWidth
-              margin="normal"
               value={newOptionText}
               onChange={(e) => setNewOptionText(e.target.value)}
             />
@@ -164,31 +170,39 @@ const ViewQuestions = ({ quiz, onClose }) => {
               variant="contained"
               color="secondary"
               onClick={editingOption !== null ? handleSaveOption : handleAddOption}
-              style={{ marginTop: "10px" }}
+              sx={{ minWidth: "120px" }}
+              startIcon={editingOption !== null ? <SaveIcon /> : <AddIcon />}
             >
-              {editingOption !== null ? "Save Option" : "Add Option"}
+              {editingOption !== null ? t("save_option") : t("add_option")}
             </Button>
           </Box>
           <List>
             {options.map((opt, index) => (
               <ListItem
                 key={index}
-                style={{
+                sx={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  borderBottom: "1px solid #ddd",
+                  pb: 1,
+                  mb: 1,
                 }}
               >
                 <Typography>
-                  {opt.text} {opt.isCorrect && "(Correct)"}
+                  {opt.text} {opt.isCorrect && `(${t("correct")})`}
                 </Typography>
                 <Box>
-                  <IconButton onClick={() => handleEditOption(index)}>
-                    <EditIcon color="primary" />
-                  </IconButton>
-                  <IconButton onClick={() => handleDeleteOption(index)}>
-                    <DeleteIcon color="secondary" />
-                  </IconButton>
+                  <Tooltip title={t("edit")}>
+                    <IconButton onClick={() => handleEditOption(index)}>
+                      <EditIcon color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t("delete")}>
+                    <IconButton onClick={() => handleDeleteOption(index)}>
+                      <DeleteIcon color="error" />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
               </ListItem>
             ))}
@@ -198,15 +212,15 @@ const ViewQuestions = ({ quiz, onClose }) => {
             color="primary"
             onClick={handleSaveQuestion}
             disabled={!newQuestion.trim() || options.length === 0}
-            style={{ marginTop: "10px" }}
+            sx={{ mt: 2 }}
           >
-            {editingQuestion !== null ? "Update Question" : "Save Question"}
+            {editingQuestion !== null ? t("update_question") : t("save_question")}
           </Button>
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="primary">
-          Close
+          {t("close")}
         </Button>
       </DialogActions>
     </Dialog>

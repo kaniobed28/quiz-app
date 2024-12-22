@@ -15,23 +15,24 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next"; // Import useTranslation hook
 import quizStore from "../stores/quizStore";
 import userStore from "../stores/userStore";
 import '../../src/styles/Animate.css';
 
 const HomePage = observer(() => {
   const navigate = useNavigate();
+  const { t } = useTranslation(); // Access translation function
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Maintain refs and visibility states
   const refs = useRef([]);
   const [visibilityStates, setVisibilityStates] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      await quizStore.fetchQuizzes(); // Ensure quizzes are fetched
+      await quizStore.fetchQuizzes();
       refs.current = quizStore.quizzes.map(() => React.createRef());
       setVisibilityStates(quizStore.quizzes.map(() => false));
       setLoading(false);
@@ -52,7 +53,7 @@ const HomePage = observer(() => {
     window.addEventListener("scroll", handleVisibility);
     window.addEventListener("resize", handleVisibility);
 
-    handleVisibility(); // Trigger once on mount
+    handleVisibility();
 
     return () => {
       window.removeEventListener("scroll", handleVisibility);
@@ -83,7 +84,7 @@ const HomePage = observer(() => {
 
   const handleLogout = async () => {
     await userStore.logout();
-    navigate("/auth"); // Redirect to the auth page after logout
+    navigate("/auth");
   };
 
   if (loading) {
@@ -91,7 +92,7 @@ const HomePage = observer(() => {
       <Container maxWidth="sm" style={{ textAlign: "center", marginTop: "50px" }}>
         <CircularProgress />
         <Typography variant="h6" style={{ marginTop: "20px" }}>
-          Loading quizzes...
+          {t("loading_quizzes")}
         </Typography>
       </Container>
     );
@@ -101,10 +102,9 @@ const HomePage = observer(() => {
     <Container maxWidth="lg" style={{ marginTop: "20px" }}>
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Typography variant="h3" gutterBottom>
-          Welcome to the Quiz App
+          {t("welcome_quiz_app")}
         </Typography>
 
-        {/* Profile Section */}
         {userStore.isLoggedIn() && (
           <Box display="flex" alignItems="center">
             <Avatar
@@ -113,47 +113,38 @@ const HomePage = observer(() => {
               onClick={handleMenuOpen}
               style={{ cursor: "pointer" }}
             />
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-            >
+            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
               <MenuItem disabled>
-                <Typography variant="body1">
-                  {userStore.user.displayName}
-                </Typography>
+                <Typography variant="body1">{userStore.user.displayName}</Typography>
               </MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              <MenuItem onClick={handleLogout}>{t("logout")}</MenuItem>
             </Menu>
           </Box>
         )}
       </Box>
 
       <Typography variant="h6" align="center" color="textSecondary" gutterBottom>
-        Test your knowledge with our curated quizzes!
+        {t("test_knowledge")}
       </Typography>
 
-      {/* Admin Page Button */}
       {userStore.isLoggedIn() && (
         <Box display="flex" justifyContent="flex-end" marginBottom="20px">
           <Button variant="outlined" color="secondary" onClick={goToAdminPage}>
-            Go to Admin Page
+            {t("go_to_admin_page")}
           </Button>
         </Box>
       )}
 
-      {/* Search Bar */}
       <TextField
-        label="Search Quizzes"
+        label={t("search_quizzes")}
         variant="outlined"
         fullWidth
         margin="normal"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Search for a quiz..."
+        placeholder={t("search_placeholder")}
       />
 
-      {/* List of Quizzes */}
       <Grid container spacing={3} style={{ marginTop: "20px" }}>
         {filteredQuizzes.length > 0 ? (
           filteredQuizzes.map((quiz, index) => {
@@ -166,7 +157,7 @@ const HomePage = observer(() => {
                 md={4}
                 key={quiz.id}
                 ref={refs.current[index]}
-                className={isVisible ? "fade-in" : "fade-out"} // Apply animation classes
+                className={isVisible ? "fade-in" : "fade-out"}
               >
                 <Card
                   elevation={3}
@@ -183,14 +174,14 @@ const HomePage = observer(() => {
                         style={{ marginRight: "10px" }}
                       />
                       <Typography variant="body2" color="textSecondary">
-                        {quiz.admin?.displayName || "Unknown Creator"}
+                        {quiz.admin?.displayName || t("unknown_creator")}
                       </Typography>
                     </Box>
                     <Typography variant="h5" gutterBottom>
                       {quiz.name}
                     </Typography>
                     <Typography variant="body2" color="textSecondary" gutterBottom>
-                      {quiz.description || "No description available"}
+                      {quiz.description || t("no_description_available")}
                     </Typography>
                     <Button
                       variant="contained"
@@ -198,7 +189,7 @@ const HomePage = observer(() => {
                       fullWidth
                       onClick={() => selectQuiz(quiz.id)}
                     >
-                      Start Quiz
+                      {t("start_quiz")}
                     </Button>
                   </CardContent>
                 </Card>
@@ -207,7 +198,7 @@ const HomePage = observer(() => {
           })
         ) : (
           <Typography variant="h6" color="textSecondary" align="center">
-            No quizzes found. Try a different search or create one!
+            {t("no_quizzes_found")}
           </Typography>
         )}
       </Grid>
