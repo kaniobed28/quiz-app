@@ -1,10 +1,8 @@
+// Importing React and necessary hooks/components from MUI, React Router, and other dependencies
 import React, { useEffect, useState } from "react";
 import {
   Container,
-  TextField,
   Button,
-  List,
-  ListItem,
   Avatar,
   Typography,
   Box,
@@ -12,49 +10,78 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Card,
-  CardContent,
-  CardActions,
   Grid,
-  Tooltip,
+  TextField,
 } from "@mui/material";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import quizStore from "../stores/quizStore";
-import userStore from "../stores/userStore";
-import ViewQuestions from "../components/ViewQuestion";
-import ViewScores from "../components/ViewScores";
+import quizStore from "../stores/quizStore"; // Store for managing quizzes
+import userStore from "../stores/userStore"; // Store for user-related data
+import adminStore from "../stores/adminStore"; // Store for managing admin data
+import ViewQuestions from "../components/ViewQuestion"; // Component to view quiz questions
+import ViewScores from "../components/ViewScores"; // Component to view quiz scores
+import QuizAnalyticsDashboard from "../components/QuizAnalyticsDashboard"; // Component for analytics
+import QuizList from "../components/QuizList"; // Component for listing quizzes
+import CreateQuizSection from "../components/CreateQuizSection"; // Component for creating quizzes
+import RegisterAsAdminDialog from "../components/RegisterAsAdminDialog"; // Dialog for registering as admin
 
+// Reusable button to navigate to the home page
+const GoHomeButton = () => {
+  const navigate = useNavigate(); // Hook to programmatically navigate between routes
+  return (
+    <Button variant="outlined" color="primary" onClick={() => navigate("/")}>
+      Go Home
+    </Button>
+  );
+};
+
+// Main AdminPage component
 const AdminPage = observer(() => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [quizName, setQuizName] = useState("");
-  const [quizDescription, setQuizDescription] = useState("");
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
-  const [showAuthCodeDialog, setShowAuthCodeDialog] = useState(false);
-  const [newAuthCode, setNewAuthCode] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
-  const [showQuestions, setShowQuestions] = useState(false);
-  const [showScores, setShowScores] = useState(false);
+  const { t } = useTranslation(); // Hook for translations
+  const navigate = useNavigate(); // Navigation hook
 
-  const allowedAdmins = ["kaniobed28@gmail.com", "martintawiah56@gmail.com"];
+  // State variables for managing quiz creation and actions
+  const [quizName, setQuizName] = useState(""); // Quiz name input state
+  const [quizDescription, setQuizDescription] = useState(""); // Quiz description input state
+  const [selectedQuiz, setSelectedQuiz] = useState(null); // Currently selected quiz
+  const [showAnalytics, setShowAnalytics] = useState(false); // Flag for showing analytics dialog
+  const [showAuthCodeDialog, setShowAuthCodeDialog] = useState(false); // Flag for showing auth code dialog
+  const [newAuthCode, setNewAuthCode] = useState(""); // Input for new auth code
+  const [openRegisterDialog, setOpenRegisterDialog] = useState(false); // Register as admin dialog flag
+  const [showQuestions, setShowQuestions] = useState(false); // Flag for showing questions
+  const [showScores, setShowScores] = useState(false); // Flag for showing scores
 
+  // Effect to check if the current user is an admin
   useEffect(() => {
-    if (!allowedAdmins.includes(userStore.user?.email)) {
-      setOpenDialog(true);
-    }
-  }, []);
+    const checkAdminStatus = async () => {
+      if (userStore.isLoggedIn()) {
+        await adminStore.checkAdminStatus(userStore.user?.uid);
+        if (!adminStore.isAdmin) {
+          setOpenRegisterDialog(true); // Show register as admin dialog if not an admin
+        }
+      } else {
+        navigate("/auth"); // Redirect to login if not authenticated
+      }
+    };
+    checkAdminStatus();
+  }, [navigate]);
 
-  const handleDialogClose = () => {
-    setOpenDialog(false);
-    navigate("/");
+  // Handle registering the user as an admin
+  const handleRegisterAsAdmin = async () => {
+    const user = {
+      uid: userStore.user?.uid,
+      email: userStore.user?.email,
+      displayName: userStore.user?.displayName,
+      photoURL: userStore.user?.photoURL,
+    };
+    await adminStore.registerAsAdmin(user);
+    setOpenRegisterDialog(false); // Close the dialog after successful registration
   };
 
+  // Function to create a new quiz
   const createQuiz = async () => {
-    if (!quizName.trim()) return;
+    if (!quizName.trim()) return; // Prevent creating a quiz without a name
 
     const adminInfo = {
       uid: userStore.user?.uid,
@@ -62,16 +89,13 @@ const AdminPage = observer(() => {
       photoURL: userStore.user?.photoURL,
     };
 
+    // Call the store function to create a quiz
     await quizStore.createQuiz(quizName, quizDescription, adminInfo);
-    setQuizName("");
+    setQuizName(""); // Reset input fields
     setQuizDescription("");
   };
 
-  const handleQuizClick = (quiz) => {
-    setSelectedQuiz(quiz);
-    setShowAuthCodeDialog(true);
-  };
-
+  // Function to save a new auth code for the selected quiz
   const handleAuthCodeSave = async () => {
     if (newAuthCode.trim()) {
       await quizStore.updateQuizAuthCode(selectedQuiz.id, newAuthCode);
@@ -81,49 +105,30 @@ const AdminPage = observer(() => {
     }
   };
 
-  const handleViewQuestions = (quiz) => {
-    setSelectedQuiz(quiz);
-    setShowQuestions(true);
-  };
-
-  const handleViewScores = (quiz) => {
-    setSelectedQuiz(quiz);
-    setShowScores(true);
-  };
-
-  const handleDeleteQuiz = async (quizId) => {
-    if (window.confirm(t("confirm_delete_quiz"))) {
-      await quizStore.deleteQuiz(quizId);
-    }
-  };
-
+  // Filter quizzes created by the current admin
   const userQuizzes = quizStore.quizzes.filter(
     (quiz) => quiz.admin?.uid === userStore.user?.uid
   );
 
-  const goToHome = () => {
-    navigate("/");
-  };
+  if (!adminStore.isAdmin) {
+    return (
+      <RegisterAsAdminDialog
+        open={openRegisterDialog}
+        onClose={() => navigate("/")} // Redirect to home if the user cancels
+        onRegister={handleRegisterAsAdmin} // Register the user as admin
+      />
+    );
+  }
 
+  // Main JSX rendering
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Unauthorized Access Dialog */}
-      <Dialog open={openDialog} onClose={handleDialogClose}>
-        <DialogTitle sx={{ display: "flex", alignItems: "center" }}>
-          <WarningAmberIcon sx={{ color: "#ff9800", mr: 1 }} />
-          {t("access_denied")}
-        </DialogTitle>
-        <DialogContent>
-          <Typography>{t("not_admin_contact_admins")}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialogClose} color="primary">
-            {t("return_home")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Go Home Button */}
+      <Box sx={{ mb: 2 }}>
+        <GoHomeButton />
+      </Box>
 
-      {/* Authentication Code Dialog */}
+      {/* Auth Code Dialog */}
       <Dialog open={showAuthCodeDialog} onClose={() => setShowAuthCodeDialog(false)}>
         <DialogTitle>{t("quiz_info")}</DialogTitle>
         <DialogContent>
@@ -161,24 +166,31 @@ const AdminPage = observer(() => {
         </DialogActions>
       </Dialog>
 
-      {/* Show Questions Dialog */}
+      {/* Display selected quiz details */}
       {showQuestions && (
         <ViewQuestions quiz={selectedQuiz} onClose={() => setShowQuestions(false)} />
       )}
-
-      {/* Show Scores Dialog */}
       {showScores && (
         <ViewScores quiz={selectedQuiz} onClose={() => setShowScores(false)} />
       )}
+      {showAnalytics && selectedQuiz && (
+        <Dialog open={showAnalytics} onClose={() => setShowAnalytics(false)} fullWidth maxWidth="lg">
+          <DialogTitle>{t("quiz_analytics")}</DialogTitle>
+          <DialogContent>
+            <QuizAnalyticsDashboard quizId={selectedQuiz.id} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowAnalytics(false)} color="primary">
+              {t("close")}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
 
+      {/* Main content: quiz list and creation section */}
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            sx={{ borderBottom: "1px solid #ddd", pb: 2 }}
-          >
+          <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ borderBottom: "1px solid #ddd", pb: 2 }}>
             <Typography variant="h4">{t("admin_page")}</Typography>
             {userStore.isLoggedIn() && (
               <Box display="flex" alignItems="center">
@@ -192,108 +204,29 @@ const AdminPage = observer(() => {
         </Grid>
 
         <Grid item xs={12} md={6} lg={4} sx={{ mx: "auto" }}>
-          <Card elevation={3} sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h5" gutterBottom>
-                {t("create_new_quiz")}
-              </Typography>
-              <TextField
-                label={t("quiz_name")}
-                fullWidth
-                margin="normal"
-                value={quizName}
-                onChange={(e) => setQuizName(e.target.value)}
-              />
-              <TextField
-                label={t("quiz_description")}
-                fullWidth
-                margin="normal"
-                value={quizDescription}
-                onChange={(e) => setQuizDescription(e.target.value)}
-                multiline
-                rows={3}
-                placeholder={t("add_description_placeholder")}
-              />
-            </CardContent>
-            <CardActions>
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                onClick={createQuiz}
-                sx={{ textTransform: "none" }}
-              >
-                {t("create_quiz")}
-              </Button>
-            </CardActions>
-          </Card>
+          <CreateQuizSection
+            quizName={quizName}
+            quizDescription={quizDescription}
+            onQuizNameChange={setQuizName}
+            onQuizDescriptionChange={setQuizDescription}
+            onCreate={createQuiz}
+            t={t}
+          />
         </Grid>
 
         <Grid item xs={12}>
-          <List>
-            {userQuizzes.map((quiz) => (
-              <ListItem
-                key={quiz.id}
-                sx={{
-                  background: selectedQuiz?.id === quiz.id ? "#e0f7fa" : "transparent",
-                  mb: 1,
-                  borderRadius: 1,
-                  p: 2,
-                }}
-              >
-                <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
-                  <Typography variant="body1">{quiz.name}</Typography>
-                  <Box>
-                    <Tooltip title={t("info")}>
-                      <Button
-                        onClick={() => handleQuizClick(quiz)}
-                        color="primary"
-                        sx={{ textTransform: "none" }}
-                      >
-                        {t("info")}
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title={t("view_questions")}>
-                      <Button
-                        onClick={() => handleViewQuestions(quiz)}
-                        color="secondary"
-                        sx={{ textTransform: "none" }}
-                      >
-                        {t("view_questions")}
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title={t("view_scores")}>
-                      <Button
-                        onClick={() => handleViewScores(quiz)}
-                        color="secondary"
-                        sx={{ textTransform: "none" }}
-                      >
-                        {t("view_scores")}
-                      </Button>
-                    </Tooltip>
-                    <Tooltip title={t("delete")}>
-                      <Button
-                        onClick={() => handleDeleteQuiz(quiz.id)}
-                        color="error"
-                        sx={{ textTransform: "none" }}
-                        startIcon={<DeleteIcon />}
-                      >
-                        {t("delete")}
-                      </Button>
-                    </Tooltip>
-                  </Box>
-                </Box>
-              </ListItem>
-            ))}
-          </List>
+          <QuizList
+            userQuizzes={userQuizzes}
+            selectedQuiz={selectedQuiz}
+            handleQuizClick={setSelectedQuiz}
+            handleViewQuestions={() => setShowQuestions(true)}
+            handleViewScores={() => setShowScores(true)}
+            handleViewAnalytics={() => setShowAnalytics(true)}
+            handleDeleteQuiz={quizStore.deleteQuiz}
+            t={t}
+          />
         </Grid>
       </Grid>
-
-      <Box textAlign="center" mt={4}>
-        <Button variant="outlined" color="primary" onClick={goToHome}>
-          {t("back_to_home")}
-        </Button>
-      </Box>
     </Container>
   );
 });

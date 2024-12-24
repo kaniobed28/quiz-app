@@ -9,6 +9,7 @@ class QuizStore {
   currentQuestionIndex = 0;
   score = 0;
   quizCompleted = false;
+  startTime = null; // Track the start time of the quiz
 
   constructor() {
     makeAutoObservable(this);
@@ -117,10 +118,15 @@ class QuizStore {
     this.resetProgress();
   }
 
+  setStartTime() {
+    this.startTime = new Date(); // Set the start time to the current date and time
+  }
+
   resetProgress() {
     this.currentQuestionIndex = 0;
     this.score = 0;
     this.quizCompleted = false;
+    this.startTime = null; // Reset the start time
   }
 
   async saveResult(resultData) {
@@ -144,6 +150,7 @@ class QuizStore {
     }
   }
 
+
   async answerQuestion(isCorrect) {
     if (isCorrect) {
       this.score += 1;
@@ -152,6 +159,10 @@ class QuizStore {
       this.currentQuestionIndex += 1;
     } else {
       this.quizCompleted = true;
+
+      const elapsedTime = this.startTime
+        ? Math.floor((new Date() - this.startTime) / 1000) // Calculate elapsed time in seconds
+        : 0;
 
       const resultData = {
         quizId: this.currentQuiz.id,
@@ -162,6 +173,7 @@ class QuizStore {
         },
         score: this.score,
         totalQuestions: this.currentQuiz.questions.length,
+        elapsedTime, // Include elapsed time in the results
         completedAt: new Date().toISOString(),
       };
 

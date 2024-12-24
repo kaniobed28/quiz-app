@@ -12,6 +12,7 @@ import {
   Box,
   IconButton,
   Tooltip,
+  Checkbox,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -31,6 +32,10 @@ const ViewQuestions = ({ quiz, onClose }) => {
 
   const handleAddOption = () => {
     if (newOptionText.trim()) {
+      if (isCorrect && options.some((opt) => opt.isCorrect)) {
+        alert(t("only_one_correct_option"));
+        return;
+      }
       setOptions([...options, { text: newOptionText, isCorrect }]);
       setNewOptionText("");
       setIsCorrect(false);
@@ -83,6 +88,10 @@ const ViewQuestions = ({ quiz, onClose }) => {
   };
 
   const handleSaveOption = () => {
+    if (isCorrect && options.some((opt, i) => opt.isCorrect && i !== editingOption)) {
+      alert(t("only_one_correct_option"));
+      return;
+    }
     const updatedOptions = options.map((opt, index) =>
       index === editingOption ? { text: newOptionText, isCorrect } : opt
     );
@@ -159,13 +168,21 @@ const ViewQuestions = ({ quiz, onClose }) => {
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
           />
-          <Box display="flex" gap={2} mb={2}>
+          <Box display="flex" gap={2} mb={2} alignItems="center">
             <TextField
               label={t("option")}
               fullWidth
               value={newOptionText}
               onChange={(e) => setNewOptionText(e.target.value)}
             />
+            <Box display="flex" alignItems="center">
+              <Typography>{t("correct")}</Typography>
+              <Checkbox
+                checked={isCorrect}
+                onChange={(e) => setIsCorrect(e.target.checked)}
+                color="primary"
+              />
+            </Box>
             <Button
               variant="contained"
               color="secondary"

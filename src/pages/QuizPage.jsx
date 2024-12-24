@@ -14,26 +14,30 @@ import {
   DialogContent,
   TextField,
   DialogActions,
-  Avatar,
 } from "@mui/material";
 import QuizIcon from "@mui/icons-material/Quiz";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import quizStore from "../stores/quizStore";
 import userStore from "../stores/userStore";
 
 const QuizPage = observer(() => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [authCode, setAuthCode] = useState("");
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [authError, setAuthError] = useState(false);
   const [sendingResult, setSendingResult] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const currentQuestion = quizStore.currentQuiz?.questions[quizStore.currentQuestionIndex];
 
   useEffect(() => {
     if (quizStore.currentQuiz?.authCode) {
       setAuthDialogOpen(true);
+    } else {
+      quizStore.setStartTime(); // Automatically start the timer
     }
   }, []);
 
@@ -41,7 +45,11 @@ const QuizPage = observer(() => {
     quizStore.answerQuestion(isCorrect);
 
     if (quizStore.quizCompleted) {
-      await sendResultsToAdmin();
+      const elapsed = quizStore.startTime
+        ? Math.floor((new Date() - quizStore.startTime) / 1000) // Calculate elapsed time
+        : 0;
+      setElapsedTime(elapsed); // Update elapsed time in state
+      await sendResultsToAdmin(elapsed);
     }
   };
 
@@ -49,13 +57,15 @@ const QuizPage = observer(() => {
     if (quizStore.currentQuiz?.authCode === authCode) {
       setAuthDialogOpen(false);
       setAuthError(false);
+      quizStore.setStartTime(); // Start the timer after successful auth
     } else {
       setAuthError(true);
     }
   };
 
-  const sendResultsToAdmin = async () => {
+  const sendResultsToAdmin = async (elapsed) => {
     setSendingResult(true);
+
     const resultData = {
       user: {
         name: userStore.user?.displayName || "Anonymous",
@@ -67,12 +77,12 @@ const QuizPage = observer(() => {
       },
       score: quizStore.score,
       totalQuestions: quizStore.currentQuiz.questions.length,
+      elapsedTime: elapsed, // Use the elapsed time passed as a parameter
       timestamp: new Date().toISOString(),
     };
 
     try {
       await quizStore.saveResult(resultData);
-
       console.log("Results sent to admin:", resultData);
     } catch (error) {
       console.error("Error sending results:", error);
@@ -82,20 +92,22 @@ const QuizPage = observer(() => {
   };
 
   if (quizStore.quizCompleted) {
+    const finalElapsedTime = elapsedTime || Math.floor((new Date() - quizStore.startTime) / 1000);
+
     return (
       <Box
         display="flex"
         justifyContent="center"
         alignItems="center"
         minHeight="100vh"
-        style={{
+        sx={{
           textAlign: "center",
           padding: "20px",
         }}
       >
         <Fade in={true} timeout={500}>
-          <Card elevation={3} style={{ padding: "30px", borderRadius: "15px", maxWidth: "500px" }}>
-            <QuizIcon style={{ fontSize: "60px", color: "#3f51b5", marginBottom: "20px" }} />
+          <Card elevation={3} sx={{ padding: "30px", borderRadius: "15px", maxWidth: "500px" }}>
+            <QuizIcon sx={{ fontSize: "60px", color: "#3f51b5", marginBottom: "20px" }} />
             <Typography variant="h4" gutterBottom>
               {t("quiz_completed")}
             </Typography>
@@ -105,15 +117,18 @@ const QuizPage = observer(() => {
                 total: quizStore.currentQuiz?.questions.length,
               })}
             </Typography>
+            <Typography variant="body2" color="textSecondary">
+              {t("time_taken", { time: `${finalElapsedTime} seconds` })}
+            </Typography>
             <Button
               variant="contained"
               color="primary"
               size="large"
-              style={{ marginTop: "20px" }}
-              onClick={() => window.location.reload()}
+              sx={{ marginTop: "20px" }}
+              onClick={() => navigate("/")}
               disabled={sendingResult}
             >
-              {sendingResult ? t("sending_results") : t("retake_quiz")}
+              {t("return_home")}
             </Button>
           </Card>
         </Fade>
@@ -151,14 +166,14 @@ const QuizPage = observer(() => {
       {!authDialogOpen && (
         <Box
           display="flex"
-          justifyContent="center"
+          flexDirection="column"
           alignItems="center"
           minHeight="100vh"
-          style={{ padding: "20px" }}
+          sx={{ padding: "20px" }}
         >
           <Container
             maxWidth="sm"
-            style={{
+            sx={{
               borderRadius: "15px",
             }}
           >
@@ -166,7 +181,7 @@ const QuizPage = observer(() => {
             <LinearProgress
               variant="determinate"
               value={progress}
-              style={{
+              sx={{
                 marginBottom: "20px",
                 height: "8px",
                 borderRadius: "5px",
@@ -175,7 +190,7 @@ const QuizPage = observer(() => {
             <Typography
               variant="body1"
               align="center"
-              style={{ marginBottom: "10px", fontWeight: "bold" }}
+              sx={{ marginBottom: "10px", fontWeight: "bold" }}
             >
               {t("question_progress", {
                 current: quizStore.currentQuestionIndex + 1,
@@ -185,18 +200,18 @@ const QuizPage = observer(() => {
 
             {/* Question Card */}
             <Fade in={true} timeout={500}>
-              <Card elevation={3} style={{ borderRadius: "15px" }}>
+              <Card elevation={3} sx={{ borderRadius: "15px" }}>
                 <CardContent>
                   <Typography
                     variant="h5"
                     align="center"
-                    style={{ fontWeight: "bold", marginBottom: "20px" }}
+                    sx={{ fontWeight: "bold", marginBottom: "20px" }}
                   >
                     {currentQuestion?.question}
                   </Typography>
                 </CardContent>
                 <CardActions
-                  style={{
+                  sx={{
                     flexDirection: "column",
                     gap: "15px",
                     padding: "20px",
@@ -208,7 +223,7 @@ const QuizPage = observer(() => {
                       key={index}
                       variant="contained"
                       color="primary"
-                      style={{
+                      sx={{
                         width: "100%",
                         textTransform: "none",
                         fontSize: "16px",
@@ -228,5 +243,6 @@ const QuizPage = observer(() => {
     </>
   );
 });
+
 
 export default QuizPage;
