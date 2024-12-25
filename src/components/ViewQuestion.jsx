@@ -13,6 +13,8 @@ import {
   IconButton,
   Tooltip,
   Checkbox,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -23,6 +25,9 @@ import { useTranslation } from "react-i18next";
 
 const ViewQuestions = ({ quiz, onClose }) => {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [newQuestion, setNewQuestion] = useState("");
   const [newOptionText, setNewOptionText] = useState("");
   const [options, setOptions] = useState([]);
@@ -62,13 +67,24 @@ const ViewQuestions = ({ quiz, onClose }) => {
     }
   };
 
-  const handleDeleteQuestion = async (index) => {
-    try {
-      await quizStore.deleteQuestion(quiz.id, index);
-    } catch (error) {
-      console.error(t("error_deleting_question"), error.message);
-    }
-  };
+  const [localQuestions, setLocalQuestions] = useState([...quiz.questions]);
+
+const handleDeleteQuestion = async (index) => {
+  try {
+    // Optimistically update localQuestions state
+    const updatedQuestions = [...localQuestions];
+    updatedQuestions.splice(index, 1);
+    setLocalQuestions(updatedQuestions); // Trigger re-render
+
+    // Perform Firestore deletion
+    await quizStore.deleteQuestion(quiz.id, index);
+  } catch (error) {
+    console.error(t("error_deleting_question"), error.message);
+  }
+};
+
+
+
 
   const handleEditQuestion = (index) => {
     const question = quiz.questions[index];
@@ -102,9 +118,15 @@ const ViewQuestions = ({ quiz, onClose }) => {
   };
 
   return (
-    <Dialog open={true} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog
+      open={true}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      fullScreen={isSmallScreen}
+    >
       <DialogTitle>{`${quiz.name} - ${t("questions")}`}</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ maxHeight: isSmallScreen ? "calc(100vh - 120px)" : "auto", overflowY: "auto" }}>
         <List>
           {quiz.questions && quiz.questions.length > 0 ? (
             quiz.questions.map((question, index) => (
@@ -112,16 +134,17 @@ const ViewQuestions = ({ quiz, onClose }) => {
                 <ListItem
                   sx={{
                     display: "flex",
+                    flexDirection: isSmallScreen ? "column" : "row",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: isSmallScreen ? "flex-start" : "center",
                     borderBottom: "1px solid #ddd",
                     pb: 1,
                   }}
                 >
-                  <Typography variant="body1">
+                  <Typography variant={isSmallScreen ? "body2" : "body1"}>
                     {index + 1}. {question.question}
                   </Typography>
-                  <Box>
+                  <Box mt={isSmallScreen ? 1 : 0}>
                     <Tooltip title={t("edit")}>
                       <IconButton onClick={() => handleEditQuestion(index)}>
                         <EditIcon color="primary" />
@@ -134,7 +157,7 @@ const ViewQuestions = ({ quiz, onClose }) => {
                     </Tooltip>
                   </Box>
                 </ListItem>
-                <List sx={{ ml: 3 }}>
+                <List sx={{ ml: isSmallScreen ? 0 : 3 }}>
                   {question.options.map((opt, i) => (
                     <ListItem
                       key={i}
@@ -168,7 +191,7 @@ const ViewQuestions = ({ quiz, onClose }) => {
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
           />
-          <Box display="flex" gap={2} mb={2} alignItems="center">
+          <Box display="flex" flexDirection={isSmallScreen ? "column" : "row"} gap={2} mb={2} alignItems="center">
             <TextField
               label={t("option")}
               fullWidth
@@ -199,6 +222,7 @@ const ViewQuestions = ({ quiz, onClose }) => {
                 key={index}
                 sx={{
                   display: "flex",
+                  flexDirection: isSmallScreen ? "column" : "row",
                   justifyContent: "space-between",
                   alignItems: "center",
                   borderBottom: "1px solid #ddd",
@@ -209,7 +233,7 @@ const ViewQuestions = ({ quiz, onClose }) => {
                 <Typography>
                   {opt.text} {opt.isCorrect && `(${t("correct")})`}
                 </Typography>
-                <Box>
+                <Box mt={isSmallScreen ? 1 : 0}>
                   <Tooltip title={t("edit")}>
                     <IconButton onClick={() => handleEditOption(index)}>
                       <EditIcon color="primary" />

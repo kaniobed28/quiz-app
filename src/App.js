@@ -19,6 +19,7 @@ import PrivacyPolicy from "./pages/PrivacyPolices";
 // Components
 import Footer from "./components/Footer";
 import AdminListPage from "./pages/AdminListPage";
+import QuizHistoryPage from "./pages/QuizHistoryPage";
 
 const App = observer(() => {
   const [darkMode, setDarkMode] = useState(false);
@@ -78,6 +79,7 @@ const App = observer(() => {
               <Route path="/terms" element={<TermsAndConditions />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/admins" element={<AdminListPage />} />
+              <Route path="/quiz-history" element={<QuizHistoryPage />} />
             </Routes>
           </div>
 

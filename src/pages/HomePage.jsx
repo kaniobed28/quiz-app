@@ -76,6 +76,10 @@ const HomePage = observer(() => {
     navigate("/admins");
   };
 
+  const goToQuizHistory = () => {
+    navigate("/quiz-history");
+  };
+
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -111,9 +115,14 @@ const HomePage = observer(() => {
           {t("view_admins")}
         </Button>
         {userStore.isLoggedIn() && (
-          <Button variant="outlined" color="secondary" onClick={goToAdminPage}>
-            {t("go_to_admin_page")}
-          </Button>
+          <>
+            <Button variant="outlined" color="secondary" onClick={goToAdminPage}>
+              {t("go_to_admin_page")}
+            </Button>
+            <Button variant="outlined" color="primary" onClick={goToQuizHistory}>
+              {t("view_quiz_history")}
+            </Button>
+          </>
         )}
       </Box>
       <SearchBar t={t} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />

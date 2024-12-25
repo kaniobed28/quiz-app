@@ -7,6 +7,8 @@ import {
   Typography,
   Tooltip,
   Button,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -20,22 +22,30 @@ const QuizList = ({
   handleDeleteQuiz,
   t,
 }) => {
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
   return (
     <Grid item xs={12}>
-      <List>
+      <List sx={{ maxHeight: "80vh", overflow: "auto" }}>
         {userQuizzes.map((quiz) => (
           <ListItem
             key={quiz.id}
             sx={{
               background: selectedQuiz?.id === quiz.id ? "#e0f7fa" : "transparent",
-              mb: 1,
+              mb: isSmallScreen ? 0.5 : 1,
               borderRadius: 1,
-              p: 2,
+              p: isSmallScreen ? 1 : 2,
             }}
           >
             <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
-              <Typography variant="body1">{quiz.name}</Typography>
-              <Box>
+              <Typography variant={isSmallScreen ? "body2" : "body1"}>{quiz.name}</Typography>
+              <Box
+                display="flex"
+                flexDirection={isSmallScreen ? "column" : "row"}
+                alignItems="center"
+                gap={1}
+              >
                 <Tooltip title={t("info")}>
                   <Button
                     onClick={() => handleQuizClick(quiz)}
@@ -90,6 +100,5 @@ const QuizList = ({
     </Grid>
   );
 };
-
 
 export default QuizList;

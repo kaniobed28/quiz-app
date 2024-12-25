@@ -137,5 +137,18 @@
   "unsubscribe": "Se désabonner",
   "subscribed_to": "Abonné à",
   "search_admins": "Rechercher des administrateurs",
-  "search_admins_placeholder": "Rechercher par nom ou email"
+  "search_admins_placeholder": "Rechercher par nom ou email",
+  "go_to_home": "Aller à l'accueil",
+  "view_quiz_history": "Voir l'historique des quiz",
+  "your_quiz_history": "Votre historique des quiz",
+  "no_quizzes_taken": "Aucun quiz effectué pour le moment.",
+  "analytics": "Analytique",
+  "detailed_quiz_history": "Historique détaillé des quiz",
+  "performance_chart": "Graphique de performance",
+  "time_trends": "Tendances temporelles",
+  "analytics_overview": "Vue d'ensemble analytique",
+  "total_quizzes_taken": "Nombre total de quiz effectués",
+  "average_time_seconds": "Temps moyen (secondes)",
+  "no_data_available": "Aucune donnée disponible à afficher.",
+  "completed_at": "Terminé à"
 }

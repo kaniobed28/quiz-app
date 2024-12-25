@@ -2,15 +2,29 @@ import React, { useEffect, useState } from "react";
 import { Container, Grid, Box, Typography, Button, Avatar, TextField } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import adminStore from "../stores/adminStore"; // Import adminStore
-import userStore from "../stores/userStore"; // Import userStore
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import adminStore from "../stores/adminStore";
+import userStore from "../stores/userStore";
+import _ from "lodash";
 
 const AdminListPage = observer(() => {
   const { t } = useTranslation();
-  const [searchQuery, setSearchQuery] = useState(""); // State for search input
+  const navigate = useNavigate(); // Initialize navigate function
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  const debounceSearch = _.debounce((query) => {
+    setDebouncedQuery(query);
+  }, 500);
 
   useEffect(() => {
-    // Fetch admin list and subscriptions on component mount
+    debounceSearch(searchQuery);
+    return () => {
+      debounceSearch.cancel();
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
     adminStore.fetchAdmins();
     adminStore.fetchUserSubscriptions(userStore.user?.uid);
   }, []);
@@ -23,11 +37,10 @@ const AdminListPage = observer(() => {
     await adminStore.unsubscribeFromAdmin(userStore.user?.uid, adminId);
   };
 
-  // Filter admins based on search query (name or email)
   const filteredAdmins = adminStore.admins.filter(
     (admin) =>
-      admin.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      admin.email.toLowerCase().includes(searchQuery.toLowerCase())
+      admin.displayName.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+      admin.email.toLowerCase().includes(debouncedQuery.toLowerCase())
   );
 
   return (
@@ -35,6 +48,17 @@ const AdminListPage = observer(() => {
       <Typography variant="h4" gutterBottom>
         {t("admins_list")}
       </Typography>
+
+      {/* "Go to Home" Button */}
+      <Box sx={{ mb: 4, display: "flex", justifyContent: "flex-end" }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => navigate("/")} // Navigate to home page
+        >
+          {t("go_to_home")}
+        </Button>
+      </Box>
 
       {/* Search Bar */}
       <Box sx={{ mb: 4 }}>

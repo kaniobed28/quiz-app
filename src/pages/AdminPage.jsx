@@ -1,4 +1,3 @@
-// Importing React and necessary hooks/components from MUI, React Router, and other dependencies
 import React, { useEffect, useState } from "react";
 import {
   Container,
@@ -16,19 +15,18 @@ import {
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import quizStore from "../stores/quizStore"; // Store for managing quizzes
-import userStore from "../stores/userStore"; // Store for user-related data
-import adminStore from "../stores/adminStore"; // Store for managing admin data
-import ViewQuestions from "../components/ViewQuestion"; // Component to view quiz questions
-import ViewScores from "../components/ViewScores"; // Component to view quiz scores
-import QuizAnalyticsDashboard from "../components/QuizAnalyticsDashboard"; // Component for analytics
-import QuizList from "../components/QuizList"; // Component for listing quizzes
-import CreateQuizSection from "../components/CreateQuizSection"; // Component for creating quizzes
-import RegisterAsAdminDialog from "../components/RegisterAsAdminDialog"; // Dialog for registering as admin
+import quizStore from "../stores/quizStore";
+import userStore from "../stores/userStore";
+import adminStore from "../stores/adminStore";
+import ViewQuestions from "../components/ViewQuestion";
+import ViewScores from "../components/ViewScores";
+import QuizAnalyticsDashboard from "../components/QuizAnalyticsDashboard";
+import QuizList from "../components/QuizList";
+import CreateQuizSection from "../components/CreateQuizSection";
+import RegisterAsAdminDialog from "../components/RegisterAsAdminDialog";
 
-// Reusable button to navigate to the home page
 const GoHomeButton = () => {
-  const navigate = useNavigate(); // Hook to programmatically navigate between routes
+  const navigate = useNavigate();
   return (
     <Button variant="outlined" color="primary" onClick={() => navigate("/")}>
       Go Home
@@ -36,38 +34,35 @@ const GoHomeButton = () => {
   );
 };
 
-// Main AdminPage component
 const AdminPage = observer(() => {
-  const { t } = useTranslation(); // Hook for translations
-  const navigate = useNavigate(); // Navigation hook
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
-  // State variables for managing quiz creation and actions
-  const [quizName, setQuizName] = useState(""); // Quiz name input state
-  const [quizDescription, setQuizDescription] = useState(""); // Quiz description input state
-  const [selectedQuiz, setSelectedQuiz] = useState(null); // Currently selected quiz
-  const [showAnalytics, setShowAnalytics] = useState(false); // Flag for showing analytics dialog
-  const [showAuthCodeDialog, setShowAuthCodeDialog] = useState(false); // Flag for showing auth code dialog
-  const [newAuthCode, setNewAuthCode] = useState(""); // Input for new auth code
-  const [openRegisterDialog, setOpenRegisterDialog] = useState(false); // Register as admin dialog flag
-  const [showQuestions, setShowQuestions] = useState(false); // Flag for showing questions
-  const [showScores, setShowScores] = useState(false); // Flag for showing scores
+  const [quizName, setQuizName] = useState("");
+  const [quizDescription, setQuizDescription] = useState("");
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAuthCodeDialog, setShowAuthCodeDialog] = useState(false);
+  const [newAuthCode, setNewAuthCode] = useState("");
+  const [openRegisterDialog, setOpenRegisterDialog] = useState(false);
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [showScores, setShowScores] = useState(false);
 
-  // Effect to check if the current user is an admin
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const initializeAdminStatus = async () => {
       if (userStore.isLoggedIn()) {
         await adminStore.checkAdminStatus(userStore.user?.uid);
         if (!adminStore.isAdmin) {
-          setOpenRegisterDialog(true); // Show register as admin dialog if not an admin
+          setOpenRegisterDialog(true);
         }
       } else {
-        navigate("/auth"); // Redirect to login if not authenticated
+        navigate("/auth");
       }
     };
-    checkAdminStatus();
+
+    initializeAdminStatus();
   }, [navigate]);
 
-  // Handle registering the user as an admin
   const handleRegisterAsAdmin = async () => {
     const user = {
       uid: userStore.user?.uid,
@@ -76,26 +71,21 @@ const AdminPage = observer(() => {
       photoURL: userStore.user?.photoURL,
     };
     await adminStore.registerAsAdmin(user);
-    setOpenRegisterDialog(false); // Close the dialog after successful registration
+    setOpenRegisterDialog(false);
   };
 
-  // Function to create a new quiz
   const createQuiz = async () => {
-    if (!quizName.trim()) return; // Prevent creating a quiz without a name
-
+    if (!quizName.trim()) return;
     const adminInfo = {
       uid: userStore.user?.uid,
       displayName: userStore.user?.displayName,
       photoURL: userStore.user?.photoURL,
     };
-
-    // Call the store function to create a quiz
     await quizStore.createQuiz(quizName, quizDescription, adminInfo);
-    setQuizName(""); // Reset input fields
+    setQuizName("");
     setQuizDescription("");
   };
 
-  // Function to save a new auth code for the selected quiz
   const handleAuthCodeSave = async () => {
     if (newAuthCode.trim()) {
       await quizStore.updateQuizAuthCode(selectedQuiz.id, newAuthCode);
@@ -105,7 +95,32 @@ const AdminPage = observer(() => {
     }
   };
 
-  // Filter quizzes created by the current admin
+  const handleQuizClick = (quiz) => {
+    setSelectedQuiz(quiz);
+    setShowAuthCodeDialog(true);
+  };
+
+  const handleViewQuestions = (quiz) => {
+    setSelectedQuiz(quiz);
+    setShowQuestions(true);
+  };
+
+  const handleViewScores = (quiz) => {
+    setSelectedQuiz(quiz);
+    setShowScores(true);
+  };
+
+  const handleViewAnalytics = (quiz) => {
+    setSelectedQuiz(quiz);
+    setShowAnalytics(true);
+  };
+
+  const handleDeleteQuiz = async (quizId) => {
+    if (window.confirm(t("confirm_delete_quiz"))) {
+      await quizStore.deleteQuiz(quizId);
+    }
+  };
+
   const userQuizzes = quizStore.quizzes.filter(
     (quiz) => quiz.admin?.uid === userStore.user?.uid
   );
@@ -114,21 +129,18 @@ const AdminPage = observer(() => {
     return (
       <RegisterAsAdminDialog
         open={openRegisterDialog}
-        onClose={() => navigate("/")} // Redirect to home if the user cancels
-        onRegister={handleRegisterAsAdmin} // Register the user as admin
+        onClose={() => navigate("/")}
+        onRegister={handleRegisterAsAdmin}
       />
     );
   }
 
-  // Main JSX rendering
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      {/* Go Home Button */}
       <Box sx={{ mb: 2 }}>
         <GoHomeButton />
       </Box>
 
-      {/* Auth Code Dialog */}
       <Dialog open={showAuthCodeDialog} onClose={() => setShowAuthCodeDialog(false)}>
         <DialogTitle>{t("quiz_info")}</DialogTitle>
         <DialogContent>
@@ -166,7 +178,6 @@ const AdminPage = observer(() => {
         </DialogActions>
       </Dialog>
 
-      {/* Display selected quiz details */}
       {showQuestions && (
         <ViewQuestions quiz={selectedQuiz} onClose={() => setShowQuestions(false)} />
       )}
@@ -187,7 +198,6 @@ const AdminPage = observer(() => {
         </Dialog>
       )}
 
-      {/* Main content: quiz list and creation section */}
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ borderBottom: "1px solid #ddd", pb: 2 }}>
@@ -218,11 +228,11 @@ const AdminPage = observer(() => {
           <QuizList
             userQuizzes={userQuizzes}
             selectedQuiz={selectedQuiz}
-            handleQuizClick={setSelectedQuiz}
-            handleViewQuestions={() => setShowQuestions(true)}
-            handleViewScores={() => setShowScores(true)}
-            handleViewAnalytics={() => setShowAnalytics(true)}
-            handleDeleteQuiz={quizStore.deleteQuiz}
+            handleQuizClick={handleQuizClick}
+            handleViewQuestions={handleViewQuestions}
+            handleViewScores={handleViewScores}
+            handleViewAnalytics={handleViewAnalytics}
+            handleDeleteQuiz={handleDeleteQuiz}
             t={t}
           />
         </Grid>
