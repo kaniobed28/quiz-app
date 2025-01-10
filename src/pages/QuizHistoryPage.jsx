@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Container, Box, Typography, Grid, Card, CardContent, CardActions, Divider, Button } from "@mui/material";
+import {
+  Container,
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Divider,
+  Button,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
@@ -19,23 +29,25 @@ const QuizHistoryPage = observer(() => {
   const [loading, setLoading] = useState(true);
   const [selectedQuiz, setSelectedQuiz] = useState(null); // Track selected quiz for details modal
   const [viewDetailsOpen, setViewDetailsOpen] = useState(false); // Control modal visibility
+  const [filterOption, setFilterOption] = useState("all"); // Manage filters
+
+  const fetchQuizHistory = async () => {
+    setLoading(true);
+    if (userStore.user) {
+      try {
+        const allResults = await quizStore.fetchScores();
+        const currentUserResults = allResults.filter(
+          (result) => result.user?.email === userStore.user.email
+        );
+        setUserQuizzes(currentUserResults);
+      } catch (error) {
+        console.error("Error fetching quiz history:", error.message);
+      }
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchQuizHistory = async () => {
-      if (userStore.user) {
-        try {
-          const allResults = await quizStore.fetchScores();
-          const currentUserResults = allResults.filter(
-            (result) => result.user?.email === userStore.user.email
-          );
-          setUserQuizzes(currentUserResults);
-        } catch (error) {
-          console.error("Error fetching quiz history:", error.message);
-        }
-      }
-      setLoading(false);
-    };
-
     fetchQuizHistory();
   }, []);
 
@@ -46,6 +58,24 @@ const QuizHistoryPage = observer(() => {
 
   const handleBack = () => {
     navigate("/");
+  };
+
+  const applyFilter = (filterType) => {
+    switch (filterType) {
+      case "date":
+        return [...userQuizzes].sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+      case "score":
+        return [...userQuizzes].sort((a, b) => b.score - a.score);
+      default:
+        return userQuizzes;
+    }
+  };
+
+  const handleFilter = (filterType) => {
+    setUserQuizzes(applyFilter(filterType));
+    setFilterOption(filterType);
   };
 
   if (loading) {
@@ -63,6 +93,37 @@ const QuizHistoryPage = observer(() => {
           {t("back_to_home")}
         </Button>
       </Box>
+
+      {/* Filters Section */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+        <Box>
+          <Typography variant="body1" gutterBottom>
+            {t("filter_quizzes")}
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() => handleFilter("date")}
+            disabled={filterOption === "date"}
+          >
+            {t("filter_by_date")}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => handleFilter("score")}
+            disabled={filterOption === "score"}
+          >
+            {t("filter_by_score")}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => fetchQuizHistory()}
+            disabled={filterOption === "all"}
+          >
+            {t("clear_filters")}
+          </Button>
+        </Box>
+      </Box>
+
       {userQuizzes.length === 0 ? (
         <Typography variant="body1" textAlign="center">
           {t("no_quizzes_taken")}
@@ -129,5 +190,4 @@ const QuizHistoryPage = observer(() => {
     </Container>
   );
 });
-
 export default QuizHistoryPage;

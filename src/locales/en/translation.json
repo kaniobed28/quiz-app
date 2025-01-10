@@ -151,4 +151,8 @@
   "average_time_seconds": "Average Time (seconds)",
   "no_data_available": "No data available to display.",
   "completed_at": "Completed At"
+,
+  "reason_title": "Reason",
+  "reason_message": "This app is free. To continue enjoying improvements, please consider supporting the developers!",
+  "ok": "OK"
 }

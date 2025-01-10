@@ -150,5 +150,8 @@
   "total_quizzes_taken": "Nombre total de quiz effectués",
   "average_time_seconds": "Temps moyen (secondes)",
   "no_data_available": "Aucune donnée disponible à afficher.",
-  "completed_at": "Terminé à"
+  "completed_at": "Terminé à",
+  "reason_title": "Raison",
+  "reason_message": "Cette application est gratuite. Pour continuer à en profiter et à voir des améliorations, merci de soutenir les développeurs !",
+  "ok": "D'accord"
 }

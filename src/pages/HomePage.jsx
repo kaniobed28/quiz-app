@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Container, Grid, Box, Button, Typography } from "@mui/material";
+import {
+  Container,
+  Grid,
+  Box,
+  Button,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
@@ -9,7 +16,7 @@ import QuizCard from "../components/QuizCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import quizStore from "../stores/quizStore";
 import userStore from "../stores/userStore";
-import adminStore from "../stores/adminStore"; // Import adminStore for subscriptions
+import adminStore from "../stores/adminStore";
 
 const HomePage = observer(() => {
   const navigate = useNavigate();
@@ -20,14 +27,12 @@ const HomePage = observer(() => {
 
   const refs = useRef([]);
   const [visibilityStates, setVisibilityStates] = useState([]);
+  const isMobile = useMediaQuery("(max-width:600px)"); // Media query for mobile view
 
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch quizzes and subscriptions
       await quizStore.fetchQuizzes();
       await adminStore.fetchUserSubscriptions(userStore.user?.uid);
-
-      // Set refs and visibility for quizzes
       refs.current = quizStore.quizzes.map(() => React.createRef());
       setVisibilityStates(quizStore.quizzes.map(() => false));
       setLoading(false);
@@ -56,11 +61,10 @@ const HomePage = observer(() => {
     };
   }, [refs]);
 
-  // Filter quizzes based on subscription and search query
   const filteredQuizzes = quizStore.quizzes.filter(
     (quiz) =>
-      adminStore.userSubscriptions.includes(quiz.admin?.uid) && // Only quizzes from subscribed admins
-      quiz.name.toLowerCase().includes(searchQuery.toLowerCase()) // Matching search query
+      adminStore.userSubscriptions.includes(quiz.admin?.uid) &&
+      quiz.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const selectQuiz = (quizId) => {
@@ -110,16 +114,38 @@ const HomePage = observer(() => {
       <Typography variant="h6" align="center" color="textSecondary" gutterBottom>
         {t("test_knowledge")}
       </Typography>
-      <Box display="flex" justifyContent="space-between" marginBottom="20px">
-        <Button variant="outlined" color="secondary" onClick={goToAdminListPage}>
+      <Box
+        display="flex"
+        flexDirection={isMobile ? "column" : "row"}
+        justifyContent="space-between"
+        alignItems={isMobile ? "stretch" : "center"}
+        marginBottom="20px"
+        gap={isMobile ? "10px" : "0"}
+      >
+        <Button
+          variant="outlined"
+          color="secondary"
+          fullWidth={isMobile}
+          onClick={goToAdminListPage}
+        >
           {t("view_admins")}
         </Button>
         {userStore.isLoggedIn() && (
           <>
-            <Button variant="outlined" color="secondary" onClick={goToAdminPage}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              fullWidth={isMobile}
+              onClick={goToAdminPage}
+            >
               {t("go_to_admin_page")}
             </Button>
-            <Button variant="outlined" color="primary" onClick={goToQuizHistory}>
+            <Button
+              variant="outlined"
+              color="primary"
+              fullWidth={isMobile}
+              onClick={goToQuizHistory}
+            >
               {t("view_quiz_history")}
             </Button>
           </>
