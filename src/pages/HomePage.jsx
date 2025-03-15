@@ -2,36 +2,37 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
   Grid,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
   Box,
-  Avatar,
-  Menu,
-  MenuItem,
-  CircularProgress,
+  Button,
+  Typography,
+  useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
+import Header from "../components/Header";
+import SearchBar from "../components/SearchBar";
+import QuizCard from "../components/QuizCard";
+import LoadingSpinner from "../components/LoadingSpinner";
 import quizStore from "../stores/quizStore";
 import userStore from "../stores/userStore";
-import '../../src/styles/Animate.css';
+import adminStore from "../stores/adminStore";
 
 const HomePage = observer(() => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Maintain refs and visibility states
   const refs = useRef([]);
   const [visibilityStates, setVisibilityStates] = useState([]);
+  const isMobile = useMediaQuery("(max-width:600px)"); // Media query for mobile view
 
   useEffect(() => {
     const fetchData = async () => {
-      await quizStore.fetchQuizzes(); // Ensure quizzes are fetched
+      await quizStore.fetchQuizzes();
+      await adminStore.fetchUserSubscriptions(userStore.user?.uid);
       refs.current = quizStore.quizzes.map(() => React.createRef());
       setVisibilityStates(quizStore.quizzes.map(() => false));
       setLoading(false);
@@ -52,7 +53,7 @@ const HomePage = observer(() => {
     window.addEventListener("scroll", handleVisibility);
     window.addEventListener("resize", handleVisibility);
 
-    handleVisibility(); // Trigger once on mount
+    handleVisibility();
 
     return () => {
       window.removeEventListener("scroll", handleVisibility);
@@ -60,8 +61,10 @@ const HomePage = observer(() => {
     };
   }, [refs]);
 
-  const filteredQuizzes = quizStore.quizzes.filter((quiz) =>
-    quiz.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredQuizzes = quizStore.quizzes.filter(
+    (quiz) =>
+      adminStore.userSubscriptions.includes(quiz.admin?.uid) &&
+      quiz.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const selectQuiz = (quizId) => {
@@ -71,6 +74,14 @@ const HomePage = observer(() => {
 
   const goToAdminPage = () => {
     navigate("/admin");
+  };
+
+  const goToAdminListPage = () => {
+    navigate("/admins");
+  };
+
+  const goToQuizHistory = () => {
+    navigate("/quiz-history");
   };
 
   const handleMenuOpen = (event) => {
@@ -83,131 +94,79 @@ const HomePage = observer(() => {
 
   const handleLogout = async () => {
     await userStore.logout();
-    navigate("/auth"); // Redirect to the auth page after logout
+    navigate("/auth");
   };
 
   if (loading) {
-    return (
-      <Container maxWidth="sm" style={{ textAlign: "center", marginTop: "50px" }}>
-        <CircularProgress />
-        <Typography variant="h6" style={{ marginTop: "20px" }}>
-          Loading quizzes...
-        </Typography>
-      </Container>
-    );
+    return <LoadingSpinner t={t} />;
   }
 
   return (
     <Container maxWidth="lg" style={{ marginTop: "20px" }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h3" gutterBottom>
-          Welcome to the Quiz App
-        </Typography>
-
-        {/* Profile Section */}
+      <Header
+        t={t}
+        userStore={userStore}
+        anchorEl={anchorEl}
+        handleMenuOpen={handleMenuOpen}
+        handleMenuClose={handleMenuClose}
+        handleLogout={handleLogout}
+      />
+      <Typography variant="h6" align="center" color="textSecondary" gutterBottom>
+        {t("test_knowledge")}
+      </Typography>
+      <Box
+        display="flex"
+        flexDirection={isMobile ? "column" : "row"}
+        justifyContent="space-between"
+        alignItems={isMobile ? "stretch" : "center"}
+        marginBottom="20px"
+        gap={isMobile ? "10px" : "0"}
+      >
+        <Button
+          variant="outlined"
+          color="secondary"
+          fullWidth={isMobile}
+          onClick={goToAdminListPage}
+        >
+          {t("view_admins")}
+        </Button>
         {userStore.isLoggedIn() && (
-          <Box display="flex" alignItems="center">
-            <Avatar
-              src={userStore.user.photoURL}
-              alt={userStore.user.displayName}
-              onClick={handleMenuOpen}
-              style={{ cursor: "pointer" }}
-            />
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
+          <>
+            <Button
+              variant="outlined"
+              color="secondary"
+              fullWidth={isMobile}
+              onClick={goToAdminPage}
             >
-              <MenuItem disabled>
-                <Typography variant="body1">
-                  {userStore.user.displayName}
-                </Typography>
-              </MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
-            </Menu>
-          </Box>
+              {t("go_to_admin_page")}
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              fullWidth={isMobile}
+              onClick={goToQuizHistory}
+            >
+              {t("view_quiz_history")}
+            </Button>
+          </>
         )}
       </Box>
-
-      <Typography variant="h6" align="center" color="textSecondary" gutterBottom>
-        Test your knowledge with our curated quizzes!
-      </Typography>
-
-      {/* Admin Page Button */}
-      {userStore.isLoggedIn() && (
-        <Box display="flex" justifyContent="flex-end" marginBottom="20px">
-          <Button variant="outlined" color="secondary" onClick={goToAdminPage}>
-            Go to Admin Page
-          </Button>
-        </Box>
-      )}
-
-      {/* Search Bar */}
-      <TextField
-        label="Search Quizzes"
-        variant="outlined"
-        fullWidth
-        margin="normal"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Search for a quiz..."
-      />
-
-      {/* List of Quizzes */}
+      <SearchBar t={t} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
       <Grid container spacing={3} style={{ marginTop: "20px" }}>
         {filteredQuizzes.length > 0 ? (
-          filteredQuizzes.map((quiz, index) => {
-            const isVisible = visibilityStates[index];
-            return (
-              <Grid
-                item
-                xs={12}
-                sm={6}
-                md={4}
-                key={quiz.id}
-                ref={refs.current[index]}
-                className={isVisible ? "fade-in" : "fade-out"} // Apply animation classes
-              >
-                <Card
-                  elevation={3}
-                  style={{
-                    transition: "transform 0.2s ease-in-out",
-                    "&:hover": { transform: "scale(1.05)" },
-                  }}
-                >
-                  <CardContent>
-                    <Box display="flex" alignItems="center" marginBottom="10px">
-                      <Avatar
-                        src={quiz.admin?.photoURL}
-                        alt={quiz.admin?.displayName}
-                        style={{ marginRight: "10px" }}
-                      />
-                      <Typography variant="body2" color="textSecondary">
-                        {quiz.admin?.displayName || "Unknown Creator"}
-                      </Typography>
-                    </Box>
-                    <Typography variant="h5" gutterBottom>
-                      {quiz.name}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" gutterBottom>
-                      {quiz.description || "No description available"}
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      fullWidth
-                      onClick={() => selectQuiz(quiz.id)}
-                    >
-                      Start Quiz
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })
+          filteredQuizzes.map((quiz, index) => (
+            <QuizCard
+              key={quiz.id}
+              quiz={quiz}
+              t={t}
+              selectQuiz={selectQuiz}
+              isVisible={visibilityStates[index]}
+              ref={refs.current[index]}
+            />
+          ))
         ) : (
           <Typography variant="h6" color="textSecondary" align="center">
-            No quizzes found. Try a different search or create one!
+            {t("no_quizzes_found")}
           </Typography>
         )}
       </Grid>
