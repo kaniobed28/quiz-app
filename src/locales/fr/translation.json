@@ -153,5 +153,16 @@
   "completed_at": "Terminé à",
   "reason_title": "Raison",
   "reason_message": "Cette application est gratuite. Pour continuer à en profiter et à voir des améliorations, merci de soutenir les développeurs !",
-  "ok": "D'accord"
+  "ok": "D'accord",
+  "error_rendering_chart": "Erreur lors du rendu du graphique. Veuillez réessayer plus tard.",
+  "moving_average": "Moyenne mobile",
+  "max_time": "Temps maximum",
+  "min_time": "Temps minimum",
+  "time_seconds": "Temps (secondes)",
+  "error_fetching_history": "Échec de la récupération de l'historique des quiz. Veuillez vérifier votre connexion.",
+  "retry": "Réessayer",
+  "filter_quizzes": "Filtrer les quiz",
+  "filter_by_date": "Filtrer par date",
+  "filter_by_score": "Filtrer par score",
+  "clear_filters": "Effacer les filtres"
 }

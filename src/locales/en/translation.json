@@ -150,9 +150,19 @@
   "total_quizzes_taken": "Total Quizzes Taken",
   "average_time_seconds": "Average Time (seconds)",
   "no_data_available": "No data available to display.",
-  "completed_at": "Completed At"
-,
+  "completed_at": "Completed At",
   "reason_title": "Reason",
   "reason_message": "This app is free. To continue enjoying improvements, please consider supporting the developers!",
-  "ok": "OK"
+  "ok": "OK",
+  "error_rendering_chart": "Error rendering chart. Please try again later.",
+  "moving_average": "Moving Average",
+  "max_time": "Max Time",
+  "min_time": "Min Time",
+  "time_seconds": "Time (seconds)",
+  "error_fetching_history": "Failed to fetch quiz history. Please check your connection.",
+  "retry": "Retry",
+  "filter_quizzes": "Filter Quizzes",
+  "filter_by_date": "Filter by Date",
+  "filter_by_score": "Filter by Score",
+  "clear_filters": "Clear Filters"
 }

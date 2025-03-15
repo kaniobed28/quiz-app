@@ -9,6 +9,7 @@ import {
   CardActions,
   Divider,
   Button,
+  Pagination,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
@@ -20,28 +21,36 @@ import userStore from "../stores/userStore";
 import AnalyticsOverview from "../components/AnalyticsOverview";
 import PerformanceChart from "../components/PerformanceChart";
 import TimeTrends from "../components/TimeTrends";
-import ViewDetails from "../components/ViewDetails"; // Import ViewDetails
+import ViewDetails from "../components/ViewDetails";
+
+const ITEMS_PER_PAGE = 6;
 
 const QuizHistoryPage = observer(() => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [userQuizzes, setUserQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedQuiz, setSelectedQuiz] = useState(null); // Track selected quiz for details modal
-  const [viewDetailsOpen, setViewDetailsOpen] = useState(false); // Control modal visibility
-  const [filterOption, setFilterOption] = useState("all"); // Manage filters
+  const [error, setError] = useState(null);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [viewDetailsOpen, setViewDetailsOpen] = useState(false);
+  const [filterOption, setFilterOption] = useState(
+    localStorage.getItem("quizFilter") || "all"
+  );
+  const [page, setPage] = useState(1);
 
   const fetchQuizHistory = async () => {
     setLoading(true);
+    setError(null);
     if (userStore.user) {
       try {
         const allResults = await quizStore.fetchScores();
         const currentUserResults = allResults.filter(
           (result) => result.user?.email === userStore.user.email
         );
-        setUserQuizzes(currentUserResults);
+        setUserQuizzes(applyFilter(filterOption, currentUserResults));
       } catch (error) {
         console.error("Error fetching quiz history:", error.message);
+        setError(t("error_fetching_history"));
       }
     }
     setLoading(false);
@@ -51,41 +60,69 @@ const QuizHistoryPage = observer(() => {
     fetchQuizHistory();
   }, []);
 
+  const applyFilter = (filterType, quizzes = userQuizzes) => {
+    localStorage.setItem("quizFilter", filterType);
+    switch (filterType) {
+      case "date":
+        return [...quizzes].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      case "score":
+        return [...quizzes].sort((a, b) => b.score - a.score);
+      default:
+        return quizzes;
+    }
+  };
+
+  const handleFilter = (filterType) => {
+    setFilterOption(filterType);
+    setUserQuizzes(applyFilter(filterType));
+    setPage(1); // Reset to first page on filter change
+  };
+
   const handleViewDetails = (quiz) => {
-    setSelectedQuiz(quiz); // Set the selected quiz
-    setViewDetailsOpen(true); // Open the modal
+    setSelectedQuiz(quiz);
+    setViewDetailsOpen(true);
   };
 
   const handleBack = () => {
     navigate("/");
   };
 
-  const applyFilter = (filterType) => {
-    switch (filterType) {
-      case "date":
-        return [...userQuizzes].sort(
-          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-        );
-      case "score":
-        return [...userQuizzes].sort((a, b) => b.score - a.score);
-      default:
-        return userQuizzes;
-    }
-  };
-
-  const handleFilter = (filterType) => {
-    setUserQuizzes(applyFilter(filterType));
-    setFilterOption(filterType);
+  const handlePageChange = (event, value) => {
+    setPage(value);
   };
 
   if (loading) {
     return <LoadingSpinner t={t} />;
   }
 
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 2 }}>
+        <Header t={t} userStore={userStore} />
+        <Typography variant="h4" gutterBottom>
+          {t("your_quiz_history")}
+        </Typography>
+        <Typography variant="body1" color="error" textAlign="center">
+          {error}
+        </Typography>
+        <Box textAlign="center" mt={2}>
+          <Button variant="outlined" color="primary" onClick={fetchQuizHistory}>
+            {t("retry")}
+          </Button>
+        </Box>
+      </Container>
+    );
+  }
+
+  const paginatedQuizzes = userQuizzes.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
+
   return (
-    <Container maxWidth="lg" style={{ marginTop: "20px" }}>
+    <Container maxWidth="lg" sx={{ mt: 2 }}>
       <Header t={t} userStore={userStore} />
-      <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom="20px">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Typography variant="h4" gutterBottom>
           {t("your_quiz_history")}
         </Typography>
@@ -96,28 +133,22 @@ const QuizHistoryPage = observer(() => {
 
       {/* Filters Section */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="body1" gutterBottom>
-            {t("filter_quizzes")}
-          </Typography>
+        <Box display="flex" gap={2}>
           <Button
-            variant="outlined"
+            variant={filterOption === "date" ? "contained" : "outlined"}
             onClick={() => handleFilter("date")}
-            disabled={filterOption === "date"}
           >
             {t("filter_by_date")}
           </Button>
           <Button
-            variant="outlined"
+            variant={filterOption === "score" ? "contained" : "outlined"}
             onClick={() => handleFilter("score")}
-            disabled={filterOption === "score"}
           >
             {t("filter_by_score")}
           </Button>
           <Button
-            variant="outlined"
-            onClick={() => fetchQuizHistory()}
-            disabled={filterOption === "all"}
+            variant={filterOption === "all" ? "contained" : "outlined"}
+            onClick={() => handleFilter("all")}
           >
             {t("clear_filters")}
           </Button>
@@ -130,13 +161,8 @@ const QuizHistoryPage = observer(() => {
         </Typography>
       ) : (
         <>
-          {/* Analytics Overview */}
           <AnalyticsOverview userQuizzes={userQuizzes} />
-
-          {/* Performance Chart */}
           <PerformanceChart userQuizzes={userQuizzes} />
-
-          {/* Time Trends */}
           <TimeTrends userQuizzes={userQuizzes} />
 
           {/* Quiz History Cards */}
@@ -145,9 +171,15 @@ const QuizHistoryPage = observer(() => {
               {t("detailed_quiz_history")}
             </Typography>
             <Grid container spacing={3}>
-              {userQuizzes.map((quiz, index) => (
+              {paginatedQuizzes.map((quiz, index) => (
                 <Grid item xs={12} sm={6} md={4} key={index}>
-                  <Card variant="outlined">
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      transition: "0.3s",
+                      "&:hover": { boxShadow: 6 },
+                    }}
+                  >
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
                         {quiz.quiz.name || t("unnamed_quiz")}
@@ -177,11 +209,18 @@ const QuizHistoryPage = observer(() => {
                 </Grid>
               ))}
             </Grid>
+            <Box mt={4} display="flex" justifyContent="center">
+              <Pagination
+                count={Math.ceil(userQuizzes.length / ITEMS_PER_PAGE)}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+              />
+            </Box>
           </Box>
         </>
       )}
 
-      {/* View Details Modal */}
       <ViewDetails
         open={viewDetailsOpen}
         onClose={() => setViewDetailsOpen(false)}
@@ -190,4 +229,5 @@ const QuizHistoryPage = observer(() => {
     </Container>
   );
 });
+
 export default QuizHistoryPage;

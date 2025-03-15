@@ -2,32 +2,49 @@ import React from "react";
 import { Box, Typography } from "@mui/material";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, BarElement, LinearScale, CategoryScale, Tooltip, Legend } from "chart.js";
+import { useTranslation } from "react-i18next";
 
 ChartJS.register(BarElement, LinearScale, CategoryScale, Tooltip, Legend);
 
 const PerformanceChart = ({ userQuizzes }) => {
+  const { t } = useTranslation();
+
   if (!userQuizzes || userQuizzes.length === 0) {
     return (
-      <Box mt={4}>
+      <Box mt={4} textAlign="center">
         <Typography variant="h5" gutterBottom>
-          Performance Chart
+          {t("performance_chart")}
         </Typography>
-        <Typography variant="body1">No data available to display.</Typography>
+        <Typography variant="body1">{t("no_data_available")}</Typography>
       </Box>
     );
   }
 
-  // Use quiz names as labels, fallback to "Unnamed Quiz" if no name is available
-  const labels = userQuizzes.map((quiz) => quiz.quiz.name || "Unnamed Quiz");
-  const data = userQuizzes.map((quiz) => quiz.score);
+  const labels = userQuizzes.map((quiz) => quiz.quiz.name || t("unnamed_quiz"));
+  const scores = userQuizzes.map((quiz) => quiz.score);
+  const maxScores = userQuizzes.map((quiz) => quiz.totalQuestions);
 
   const chartData = {
     labels,
     datasets: [
       {
-        label: "Score",
-        data,
-        backgroundColor: "rgba(75, 192, 192, 0.6)",
+        label: t("score"),
+        data: scores,
+        backgroundColor: scores.map((score, idx) =>
+          score / maxScores[idx] >= 0.8
+            ? "rgba(75, 192, 75, 0.6)" // Green for high scores
+            : score / maxScores[idx] >= 0.5
+            ? "rgba(255, 206, 86, 0.6)" // Yellow for medium
+            : "rgba(255, 99, 132, 0.6)" // Red for low
+        ),
+        borderColor: scores.map((score, idx) =>
+          score / maxScores[idx] >= 0.8
+            ? "rgba(75, 192, 75, 1)"
+            : score / maxScores[idx] >= 0.5
+            ? "rgba(255, 206, 86, 1)"
+            : "rgba(255, 99, 132, 1)"
+        ),
+        borderWidth: 1,
       },
     ],
   };
@@ -38,22 +55,23 @@ const PerformanceChart = ({ userQuizzes }) => {
     scales: {
       y: {
         beginAtZero: true,
+        max: Math.max(...maxScores) + 1, // Ensure scale fits max possible score
         title: {
           display: true,
-          text: "Score",
+          text: t("score"),
         },
       },
       x: {
         title: {
           display: true,
-          text: "Quiz Name",
+          text: t("quiz_name"),
         },
       },
     },
     plugins: {
       tooltip: {
         callbacks: {
-          label: (context) => `Score: ${context.raw}`,
+          label: (context) => `${t("score")}: ${context.raw}/${maxScores[context.dataIndex]}`,
         },
       },
       legend: {
@@ -63,11 +81,17 @@ const PerformanceChart = ({ userQuizzes }) => {
   };
 
   return (
-    <Box mt={4} style={{ height: 400 }}>
-      <Typography variant="h5" gutterBottom>
-        Performance Chart
+    <Box mt={4} sx={{ height: 400, position: "relative" }}>
+      <Typography variant="h5" gutterBottom align="center">
+        {t("performance_chart")}
       </Typography>
-      <Bar data={chartData} options={options} />
+      {scores.length > 0 ? (
+        <Bar data={chartData} options={options} />
+      ) : (
+        <Typography variant="body1" color="error" align="center">
+          {t("error_rendering_chart")}
+        </Typography>
+      )}
     </Box>
   );
 };
