@@ -26,17 +26,19 @@ const QuestionForm = ({
   correctAnswer,
   editingQuestion,
   editingOption,
+  newOptionText,
+  isCorrect,
   isSmallScreen,
   onNewQuestionChange,
-  onOptionsChange,
   onQuestionTypeChange,
   onCorrectAnswerChange,
-  onEditingOptionChange,
   onAddOption,
   onSaveQuestion,
   onDeleteOption,
   onEditOption,
   onSaveOption,
+  onNewOptionTextChange,
+  onIsCorrectChange,
   t,
 }) => (
   <Box mt={3}>
@@ -74,14 +76,14 @@ const QuestionForm = ({
           <TextField
             label={t("option")}
             fullWidth
-            value={options.newOptionText || ""}
-            onChange={(e) => onOptionsChange({ ...options, newOptionText: e.target.value })}
+            value={newOptionText}
+            onChange={(e) => onNewOptionTextChange(e.target.value)}
           />
           <Box display="flex" alignItems="center">
             <Typography>{t("correct")}</Typography>
             <Checkbox
-              checked={options.isCorrect || false}
-              onChange={(e) => onOptionsChange({ ...options, isCorrect: e.target.checked })}
+              checked={isCorrect}
+              onChange={(e) => onIsCorrectChange(e.target.checked)}
               color="primary"
             />
           </Box>

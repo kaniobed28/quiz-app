@@ -22,7 +22,7 @@ const AdminListPage = observer(() => {
     return () => {
       debounceSearch.cancel();
     };
-  }, [searchQuery]);
+  }, [searchQuery, debounceSearch]);
 
   useEffect(() => {
     adminStore.fetchAdmins();

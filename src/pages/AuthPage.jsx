@@ -24,15 +24,12 @@ const AuthPage = observer(() => {
     }
   };
 
-  const handleLogout = async () => {
-    await userStore.logout();
-  };
-
   // Redirect to homepage if already logged in
   useEffect(() => {
     if (userStore.isLoggedIn()) {
       navigate("/"); // Redirect immediately if already logged in
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userStore.user, navigate]);
 
   return (

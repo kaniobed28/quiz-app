@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, runInAction } from "mobx";
 import {
   collection,
   doc,
@@ -25,13 +25,15 @@ class AdminStore {
     try {
       const adminDocRef = doc(db, "admins", userId); // Reference to the admin document
       const adminDoc = await getDoc(adminDocRef); // Fetch the document
-      if (adminDoc.exists()) {
-        this.isAdmin = true;
-        this.currentAdmin = adminDoc.data();
-      } else {
-        this.isAdmin = false;
-        this.currentAdmin = null;
-      }
+      runInAction(() => {
+        if (adminDoc.exists()) {
+          this.isAdmin = true;
+          this.currentAdmin = adminDoc.data();
+        } else {
+          this.isAdmin = false;
+          this.currentAdmin = null;
+        }
+      });
     } catch (error) {
       console.error("Error checking admin status:", error);
     }
@@ -50,8 +52,10 @@ class AdminStore {
 
       const adminDocRef = doc(db, "admins", user.uid); // Reference to the admin document
       await setDoc(adminDocRef, adminData); // Save the document
-      this.isAdmin = true;
-      this.currentAdmin = adminData;
+      runInAction(() => {
+        this.isAdmin = true;
+        this.currentAdmin = adminData;
+      });
     } catch (error) {
       console.error("Error registering admin:", error);
       throw error; // Re-throw the error for the dialog to handle
@@ -63,10 +67,12 @@ class AdminStore {
     try {
       const adminsCollectionRef = collection(db, "admins"); // Reference to the admins collection
       const snapshot = await getDocs(adminsCollectionRef); // Get all documents in the collection
-      this.admins = snapshot.docs.map((doc) => ({
-        ...doc.data(),
-        uid: doc.id,
-      })); // Map the documents to data
+      runInAction(() => {
+        this.admins = snapshot.docs.map((doc) => ({
+          ...doc.data(),
+          uid: doc.id,
+        })); // Map the documents to data
+      });
     } catch (error) {
       console.error("Error fetching admins:", error);
     }
@@ -77,11 +83,13 @@ class AdminStore {
     try {
       const subscriptionDocRef = doc(db, "subscriptions", userId); // Reference to the subscriptions document
       const subscriptionDoc = await getDoc(subscriptionDocRef); // Fetch the document
-      if (subscriptionDoc.exists()) {
-        this.userSubscriptions = subscriptionDoc.data().adminIds || [];
-      } else {
-        this.userSubscriptions = [];
-      }
+      runInAction(() => {
+        if (subscriptionDoc.exists()) {
+          this.userSubscriptions = subscriptionDoc.data().adminIds || [];
+        } else {
+          this.userSubscriptions = [];
+        }
+      });
     } catch (error) {
       console.error("Error fetching user subscriptions:", error);
     }
@@ -94,7 +102,9 @@ class AdminStore {
       const updatedSubscriptions = [...this.userSubscriptions, adminId]; // Add the admin ID to subscriptions
 
       await setDoc(subscriptionDocRef, { adminIds: updatedSubscriptions }, { merge: true }); // Update Firestore
-      this.userSubscriptions.push(adminId); // Update local state
+      runInAction(() => {
+        this.userSubscriptions.push(adminId); // Update local state
+      });
     } catch (error) {
       console.error("Error subscribing to admin:", error);
     }
@@ -107,7 +117,9 @@ class AdminStore {
       const updatedSubscriptions = this.userSubscriptions.filter((id) => id !== adminId); // Remove the admin ID
 
       await updateDoc(subscriptionDocRef, { adminIds: updatedSubscriptions }); // Update Firestore
-      this.userSubscriptions = updatedSubscriptions; // Update local state
+      runInAction(() => {
+        this.userSubscriptions = updatedSubscriptions; // Update local state
+      });
     } catch (error) {
       console.error("Error unsubscribing from admin:", error);
     }
@@ -118,8 +130,10 @@ class AdminStore {
     try {
       const adminDocRef = doc(db, "admins", userId); // Reference to the admin document
       await deleteDoc(adminDocRef); // Delete the document
-      this.isAdmin = false;
-      this.currentAdmin = null;
+      runInAction(() => {
+        this.isAdmin = false;
+        this.currentAdmin = null;
+      });
     } catch (error) {
       console.error("Error removing admin:", error);
     }

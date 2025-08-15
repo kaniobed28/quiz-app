@@ -20,11 +20,12 @@ const ViewQuestions = ({ quiz, onClose }) => {
     correctAnswer,
     editingQuestion,
     editingOption,
+    newOptionText,
+    isCorrect,
     setNewQuestion,
     setOptions,
     setQuestionType,
     setCorrectAnswer,
-    setEditingQuestion,
     setEditingOption,
     handleAddOption,
     handleSaveQuestion,
@@ -33,6 +34,8 @@ const ViewQuestions = ({ quiz, onClose }) => {
     handleDeleteOption,
     handleEditOption,
     handleSaveOption,
+    setNewOptionText,
+    setIsCorrect,
   } = useViewQuestionsLogic(quiz);
 
   return (
@@ -58,6 +61,8 @@ const ViewQuestions = ({ quiz, onClose }) => {
         correctAnswer={correctAnswer}
         editingQuestion={editingQuestion}
         editingOption={editingOption}
+        newOptionText={newOptionText}
+        isCorrect={isCorrect}
         isSmallScreen={isSmallScreen}
         onNewQuestionChange={setNewQuestion}
         onOptionsChange={setOptions}
@@ -69,6 +74,8 @@ const ViewQuestions = ({ quiz, onClose }) => {
         onDeleteOption={handleDeleteOption}
         onEditOption={handleEditOption}
         onSaveOption={handleSaveOption}
+        onNewOptionTextChange={setNewOptionText}
+        onIsCorrectChange={setIsCorrect}
         t={t}
       />
       <DialogActions>

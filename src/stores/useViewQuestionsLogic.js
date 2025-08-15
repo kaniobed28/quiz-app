@@ -118,6 +118,8 @@ const useViewQuestionsLogic = (quiz) => {
     correctAnswer,
     editingQuestion,
     editingOption,
+    newOptionText,
+    isCorrect,
     setNewQuestion,
     setOptions,
     setQuestionType,
@@ -131,6 +133,8 @@ const useViewQuestionsLogic = (quiz) => {
     handleDeleteOption,
     handleEditOption,
     handleSaveOption,
+    setNewOptionText,
+    setIsCorrect,
   };
 };
 
