@@ -6,11 +6,7 @@ import {
   DialogActions,
   Typography,
   Button,
-  Divider,
   Box,
-  List,
-  ListItem,
-  ListItemText,
 } from "@mui/material";
 
 const ViewDetails = ({ open, onClose, quiz }) => {

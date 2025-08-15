@@ -1,6 +1,5 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import { Box } from "@mui/material";
 import quizStore from "../stores/quizStore";
 import AuthDialog from "../components/AuthDialog";
 import QuizCompleted from "../components/QuizCompleted";
@@ -20,7 +19,6 @@ const QuizPage = observer(() => {
     setTheoryAnswer,
     handleAnswer,
     validateAuthCode,
-    sendResultsToAdmin,
     navigate,
     t,
   } = useQuizLogic();

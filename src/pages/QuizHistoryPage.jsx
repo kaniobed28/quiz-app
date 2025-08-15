@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Box,
@@ -38,7 +38,19 @@ const QuizHistoryPage = observer(() => {
   );
   const [page, setPage] = useState(1);
 
-  const fetchQuizHistory = async () => {
+  const applyFilter = useCallback((filterType, quizzes = userQuizzes) => {
+    localStorage.setItem("quizFilter", filterType);
+    switch (filterType) {
+      case "date":
+        return [...quizzes].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      case "score":
+        return [...quizzes].sort((a, b) => b.score - a.score);
+      default:
+        return quizzes;
+    }
+  }, [userQuizzes]);
+
+  const fetchQuizHistory = useCallback(async () => {
     setLoading(true);
     setError(null);
     if (userStore.user) {
@@ -54,23 +66,12 @@ const QuizHistoryPage = observer(() => {
       }
     }
     setLoading(false);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, applyFilter, filterOption]);
 
   useEffect(() => {
     fetchQuizHistory();
-  }, []);
-
-  const applyFilter = (filterType, quizzes = userQuizzes) => {
-    localStorage.setItem("quizFilter", filterType);
-    switch (filterType) {
-      case "date":
-        return [...quizzes].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-      case "score":
-        return [...quizzes].sort((a, b) => b.score - a.score);
-      default:
-        return quizzes;
-    }
-  };
+  }, [fetchQuizHistory]);
 
   const handleFilter = (filterType) => {
     setFilterOption(filterType);

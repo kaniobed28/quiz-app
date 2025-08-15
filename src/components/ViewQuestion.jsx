@@ -24,7 +24,6 @@ const ViewQuestions = ({ quiz, onClose }) => {
     setOptions,
     setQuestionType,
     setCorrectAnswer,
-    setEditingQuestion,
     setEditingOption,
     handleAddOption,
     handleSaveQuestion,
