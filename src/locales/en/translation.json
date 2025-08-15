@@ -164,5 +164,6 @@
   "filter_quizzes": "Filter Quizzes",
   "filter_by_date": "Filter by Date",
   "filter_by_score": "Filter by Score",
-  "clear_filters": "Clear Filters"
+  "clear_filters": "Clear Filters",
+  "quiz_progress": "Quiz Progress"
 }

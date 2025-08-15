@@ -1,19 +1,22 @@
+import { runInAction } from "mobx";
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 export const quizManagementMethods = {
   async fetchQuizzes() {
     try {
       const querySnapshot = await getDocs(collection(this.db, "quizzes"));
-      this.quizzes = querySnapshot.docs.map((doc) => {
-        const quizData = doc.data();
-        // Ensure all questions have a type
-        quizData.questions = quizData.questions.map((q) => ({
-          ...q,
-          type: q.type || "multiple-choice", // Default to MCQ if type is missing
-        }));
-        return { id: doc.id, ...quizData };
+      runInAction(() => {
+        this.quizzes = querySnapshot.docs.map((doc) => {
+          const quizData = doc.data();
+          // Ensure all questions have a type
+          quizData.questions = quizData.questions.map((q) => ({
+            ...q,
+            type: q.type || "multiple-choice", // Default to MCQ if type is missing
+          }));
+          return { id: doc.id, ...quizData };
+        });
+        console.log("Loaded quizzes:", this.quizzes); // Debug
       });
-      console.log("Loaded quizzes:", this.quizzes); // Debug
     } catch (error) {
       console.error("Error fetching quizzes:", error.message);
     }
@@ -30,7 +33,9 @@ export const quizManagementMethods = {
 
     try {
       const docRef = await addDoc(collection(this.db, "quizzes"), newQuiz);
-      this.quizzes.push({ id: docRef.id, ...newQuiz });
+      runInAction(() => {
+        this.quizzes.push({ id: docRef.id, ...newQuiz });
+      });
     } catch (error) {
       console.error("Error creating quiz:", error.message);
     }
@@ -40,11 +45,13 @@ export const quizManagementMethods = {
     const quizIndex = this.quizzes.findIndex((quiz) => quiz.id === quizId);
     if (quizIndex === -1) return;
 
-    this.quizzes[quizIndex].authCode = authCode;
     const quizRef = doc(this.db, "quizzes", quizId);
 
     try {
       await updateDoc(quizRef, { authCode });
+      runInAction(() => {
+        this.quizzes[quizIndex].authCode = authCode;
+      });
     } catch (error) {
       console.error("Error updating auth code:", error.message);
     }
@@ -56,7 +63,9 @@ export const quizManagementMethods = {
 
     try {
       await deleteDoc(doc(this.db, "quizzes", quizId));
-      this.quizzes.splice(quizIndex, 1);
+      runInAction(() => {
+        this.quizzes.splice(quizIndex, 1);
+      });
     } catch (error) {
       console.error("Error deleting quiz:", error.message);
     }

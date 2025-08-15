@@ -164,5 +164,6 @@
   "filter_quizzes": "Filtrer les quiz",
   "filter_by_date": "Filtrer par date",
   "filter_by_score": "Filtrer par score",
-  "clear_filters": "Effacer les filtres"
+  "clear_filters": "Effacer les filtres",
+  "quiz_progress": "Progression du quiz"
 }

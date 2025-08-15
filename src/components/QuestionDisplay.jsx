@@ -40,6 +40,7 @@ const QuestionDisplay = ({
           variant="determinate"
           value={progress}
           sx={{ marginBottom: "20px", height: "8px", borderRadius: "5px" }}
+          title={t("quiz_progress")}
         />
         <Typography
           variant="body1"
