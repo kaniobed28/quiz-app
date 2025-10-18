@@ -2,14 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Container, Grid, Box, Typography, Button, Avatar, TextField } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import adminStore from "../stores/adminStore";
 import userStore from "../stores/userStore";
 import _ from "lodash";
 
 const AdminListPage = observer(() => {
   const { t } = useTranslation();
-  const navigate = useNavigate(); // Initialize navigate function
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -37,11 +37,17 @@ const AdminListPage = observer(() => {
     await adminStore.unsubscribeFromAdmin(userStore.user?.uid, adminId);
   };
 
-  const filteredAdmins = adminStore.admins.filter(
-    (admin) =>
-      admin.displayName.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-      admin.email.toLowerCase().includes(debouncedQuery.toLowerCase())
-  );
+  // ✅ Fixed filter to handle undefined values
+  const filteredAdmins = adminStore.admins.filter((admin) => {
+    const name = admin.displayName ?? "";
+    const email = admin.email ?? "";
+    const query = debouncedQuery ?? "";
+
+    return (
+      name.toLowerCase().includes(query.toLowerCase()) ||
+      email.toLowerCase().includes(query.toLowerCase())
+    );
+  });
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -49,18 +55,16 @@ const AdminListPage = observer(() => {
         {t("admins_list")}
       </Typography>
 
-      {/* "Go to Home" Button */}
       <Box sx={{ mb: 4, display: "flex", justifyContent: "flex-end" }}>
         <Button
           variant="outlined"
           color="primary"
-          onClick={() => navigate("/")} // Navigate to home page
+          onClick={() => navigate("/")}
         >
           {t("go_to_home")}
         </Button>
       </Box>
 
-      {/* Search Bar */}
       <Box sx={{ mb: 4 }}>
         <TextField
           fullWidth
@@ -89,12 +93,12 @@ const AdminListPage = observer(() => {
               >
                 <Avatar
                   src={admin.photoURL}
-                  alt={admin.displayName}
+                  alt={admin.displayName ?? ""}
                   sx={{ width: 56, height: 56, mb: 2 }}
                 />
-                <Typography variant="h6">{admin.displayName}</Typography>
+                <Typography variant="h6">{admin.displayName ?? ""}</Typography>
                 <Typography variant="body2" color="textSecondary">
-                  {admin.email}
+                  {admin.email ?? ""}
                 </Typography>
                 {isSubscribed ? (
                   <Button
